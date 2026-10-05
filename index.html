@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Цифровизация контроля · v4</title>
+<style>
+/* v2 — индустриальный: графит, сетка, тонкие линии, янтарный сигнальный акцент, DIN-подобный Bahnschrift, моноширинные цифры */
+:root{--bg:#0a0c0f;--panel:rgba(10,13,18,.9);--line:rgba(255,255,255,.14);--line2:rgba(255,255,255,.28);--text:#e9edf2;--muted:#8d97a8;
+  --acc:#ffb020;--mono:"Cascadia Mono","Cascadia Code",Consolas,"Courier New",monospace;--din:"Bahnschrift","DIN Alternate","Segoe UI",Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;overflow:hidden}
+body{font-family:var(--din);color:var(--text);-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:50% 50%;overflow:hidden;background:var(--bg);-webkit-user-select:none;user-select:none}
+#cam{position:absolute;inset:0;transform-origin:0 0;transition:transform .9s cubic-bezier(.6,0,.2,1)}
+.instant,.instant *{transition:none!important}
+.film{position:absolute;left:0;top:-8.571px;width:1920px;height:1097.143px}
+#poster,#vid{object-fit:cover}
+#poster{z-index:1;transition:filter .6s}
+#vid{z-index:2;transition:opacity .15s}
+#vid.hidden{opacity:0}
+/* стоп-кадр: холоднее и строже, виньетка + тонкая сетка */
+#stage.frozen #poster{filter:saturate(.8) contrast(1.06) brightness(.9)}
+#fx{position:absolute;inset:0;z-index:4;pointer-events:none;opacity:0;transition:opacity .6s;
+  background:radial-gradient(130% 100% at 50% 45%,transparent 55%,rgba(0,0,0,.55)),
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/100% 60px,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/60px 100%}
+#stage.frozen #fx{opacity:1}
+.layer{z-index:3;pointer-events:none;opacity:0;transition:opacity .7s}
+.layer.on{opacity:1}
+.layer.masked{-webkit-mask-size:100% 100%;mask-size:100% 100%}
+.quad{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden}
+.scr{background:#fff}
+.scr img{width:100%;height:100%;display:block}
+.scr.paper,.page{background:#f2ece0}
+.page{color:#161c28;font-family:Georgia,serif;display:flex;flex-direction:column;justify-content:center;padding:0 calc(var(--pw) * .12);gap:calc(var(--ph) * .045)}
+.page .pn b{display:block;font-size:calc(var(--ph) * .13);line-height:1}
+.page .pn span{display:block;font-size:calc(var(--ph) * .042);line-height:1.25}
+.scr .chat{position:absolute;inset:0;padding:calc(var(--ph) * .08) calc(var(--pw) * .1);font-family:Georgia,serif;color:#161c28}
+.chat .m{margin-bottom:calc(var(--ph) * .05)}
+.chat .who{font-size:calc(var(--ph) * .032);letter-spacing:.08em;text-transform:uppercase;color:#7a5418;font-weight:700}
+.chat .t{font-size:calc(var(--ph) * .05);line-height:1.3}
+
+/* панель — как прибор: кромка-акцент, уголок, линии-разделители */
+#panel{position:absolute;z-index:6;opacity:0;pointer-events:none;transition:opacity .35s,transform .5s cubic-bezier(.2,.8,.2,1)}
+#panel.right{right:64px;top:88px;width:660px;transform:translateX(24px)}
+#panel.left{left:64px;top:88px;width:660px;transform:translateX(-24px)}
+#panel.narrow{width:560px}
+#panel.bottom{left:64px;right:64px;bottom:92px;transform:translateY(24px);display:grid;grid-template-columns:1.3fr 1fr;gap:0;align-items:stretch}
+#panel.on{opacity:1;transform:none}
+.card{position:relative;background:var(--panel);border:1px solid var(--line);padding:24px 32px 26px 36px}
+.card::before{content:"";position:absolute;left:-1px;top:-1px;bottom:-1px;width:4px;background:var(--acc)}
+.card::after{content:"";position:absolute;right:-1px;top:-1px;width:18px;height:18px;border-top:2px solid var(--line2);border-right:2px solid var(--line2)}
+#panel.bottom .card+.card{border-left:none}
+#panel.bottom .card+.card::before{display:none}
+.kick{font-family:var(--mono);font-size:17px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;gap:16px;align-items:baseline}
+.kick .code{color:var(--acc)}
+.ttl{font-size:44px;font-weight:600;line-height:1.05;margin:10px 0 4px;font-stretch:condensed}
+.sub{display:none}
+.bl{list-style:none;margin-top:14px;border-top:1px solid var(--line)}
+.bl li{font-size:25px;line-height:1.3;padding:11px 0 11px 30px;border-bottom:1px solid var(--line);position:relative}
+.bl li::before{content:"";position:absolute;left:0;top:24px;width:14px;height:2px;background:var(--acc)}
+.nums{display:flex;flex-wrap:wrap}
+.card .nums{margin-top:18px}
+.num{padding-right:26px;margin-right:26px;border-right:1px solid var(--line)}
+.num:last-child{border-right:none;margin-right:0;padding-right:0}
+.num b{display:block;font-family:var(--mono);font-size:66px;font-weight:600;line-height:1;letter-spacing:-.02em;color:#fff;white-space:nowrap}
+.num span{display:block;font-size:22px;color:var(--muted);margin-top:8px;max-width:320px;line-height:1.25}
+.num em{display:inline-block;margin-top:6px;font-style:normal;font-family:var(--mono);font-size:13px;color:var(--acc);border:1px dashed var(--acc);padding:1px 7px}
+.rv{opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s}
+.on .rv,.rv.on{opacity:1;transform:none}
+
+/* статус-строка */
+#bar{position:absolute;left:0;right:0;bottom:0;height:58px;z-index:7;display:flex;align-items:center;gap:24px;padding:0 64px;
+  font-family:var(--mono);font-size:15px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  background:linear-gradient(transparent,rgba(0,0,0,.7));opacity:0;transition:opacity .4s}
+#stage.frozen #bar{opacity:1}
+#bar b{color:var(--text);font-weight:600}
+#bar .seg{display:flex;gap:4px;margin-left:auto}
+#bar .seg i{width:34px;height:4px;background:rgba(255,255,255,.18)}
+#bar .seg i.done{background:rgba(255,176,32,.45)}
+#bar .seg i.cur{background:var(--acc)}
+
+/* слайды шагов */
+#slide{position:absolute;inset:0;z-index:8;opacity:0;pointer-events:none;transition:opacity .45s;background:var(--bg)}
+#slide::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px) 0 0/100% 60px,
+  linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px) 0 0/60px 100%}
+#slide.on{opacity:1}
+.shot{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);max-width:1720px;max-height:860px;border:1px solid var(--line2);background:#fff}
+.shot.phone{height:880px;max-height:none;border-radius:40px;border:12px solid #15181e}
+.cap{position:absolute;left:64px;right:64px;bottom:40px;font-family:var(--mono);font-size:18px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.cap::before{content:"■ ";color:var(--acc)}
+.list{position:absolute;left:140px;right:140px;top:110px}
+.list h2{font-size:54px;font-weight:600;line-height:1.1;margin-bottom:44px;font-stretch:condensed}
+.list ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,auto);grid-auto-flow:column;column-gap:80px;counter-reset:n;border-top:1px solid var(--line)}
+.list li{font-size:30px;line-height:1.3;padding:20px 0 20px 76px;border-bottom:1px solid var(--line);position:relative}
+.list li::before{counter-increment:n;content:counter(n,decimal-leading-zero);position:absolute;left:0;top:20px;font-family:var(--mono);font-size:26px;color:var(--acc)}
+.list .src{margin-top:26px;font-family:var(--mono);font-size:16px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.scrollbox{position:absolute;left:50%;top:60px;transform:translateX(-50%);width:1460px;height:880px;overflow:hidden;background:#fff;border:1px solid var(--line2)}
+.scrollbox img{width:100%;display:block}
+
+/* оглавление — плитки с кадрами */
+#toc{position:absolute;inset:0;z-index:9;display:none;background:var(--bg)}
+#toc.on{display:block}
+#toc::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px) 0 0/100% 60px,
+  linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px) 0 0/60px 100%}
+#toc .bg{display:none}
+#toc .kick{position:absolute;left:96px;top:72px}
+#toc h1{position:absolute;left:96px;top:106px;font-size:60px;font-weight:600;line-height:1.05;max-width:1400px;font-stretch:condensed}
+#toc ol{position:absolute;left:96px;right:96px;top:300px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;list-style:none}
+#toc li{position:relative;height:196px;cursor:pointer;border:1px solid var(--line);background:center/cover no-repeat;overflow:hidden;filter:saturate(.75)}
+#toc li:hover{filter:none;border-color:var(--acc)}
+#toc li::before{content:"";position:absolute;inset:0;background:linear-gradient(transparent 25%,rgba(8,10,14,.93))}
+#toc li .n{position:absolute;left:16px;top:12px;font-family:var(--mono);font-size:18px;color:var(--acc);z-index:1}
+#toc li .t{position:absolute;left:16px;right:16px;bottom:14px;font-size:25px;line-height:1.15;z-index:1}
+#toc .hint{position:absolute;left:96px;bottom:36px;font-family:var(--mono);font-size:15px;color:var(--muted)}
+#toc .hint kbd{font:inherit;color:var(--text);border:1px solid var(--line2);padding:0 6px;margin:0 2px}
+
+#black{position:fixed;inset:0;background:#000;z-index:100;display:none}
+#hud{position:fixed;right:12px;bottom:10px;font:13px/1.3 Consolas,monospace;color:#8ea0c8;background:rgba(0,0,0,.6);padding:6px 10px;z-index:99}
+
+/* v4: QR-код рядом с панелью (целые пиксели на модуль — make_qr.py, scale 6 → 246 px) */
+.card.qr{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 18px 12px;background:#fff}
+.card.qr img{display:block;width:246px;height:246px;image-rendering:pixelated}
+.card.qr span{font-family:var(--mono);font-size:18px;letter-spacing:.04em;color:#0a0c0f}
+#panel:not(.bottom) .card.qr{margin-top:14px;align-items:flex-start}
+/* QR у списка ЕПГУ: отдельная колонка, все восемь пунктов остаются на одном слайде. */
+.list.with-qr{right:490px}
+.list.with-qr ol{column-gap:46px}
+.list-qr{position:absolute;right:100px;top:440px;width:302px;display:flex;flex-direction:column;align-items:center;gap:16px;padding:16px;background:#fff}
+.list-qr img{display:block;width:270px;height:270px;image-rendering:pixelated}
+.list-qr span{font-family:var(--mono);font-size:20px;color:#0a0c0f;text-align:center}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="cam">
+    <img id="poster" class="film" alt="">
+    <video id="vid" class="film" muted playsinline preload="auto"></video>
+    <div id="scrLayer" class="film layer"><div id="scr" class="quad scr"><img alt=""></div></div>
+    <div id="pageLayer" class="film layer"><div id="page" class="quad page"></div></div>
+  </div>
+  <div id="fx"></div>
+  <div id="panel"></div>
+  <div id="bar"><b id="barT"></b><span id="barK"></span><span class="seg" id="barS"></span></div>
+  <div id="slide"></div>
+  <section id="toc">
+    <div class="bg"></div>
+    <div class="kick"></div>
+    <h1></h1>
+    <ol></ol>
+    <div class="hint"><kbd>→</kbd>/<kbd>PgDn</kbd>/клик — дальше · <kbd>←</kbd> назад · <kbd>T</kbd> оглавление · <kbd>1</kbd>…<kbd>9</kbd>, <kbd>0</kbd>=10, <kbd>-</kbd>=11 ·
+      <kbd>R</kbd> заново · <kbd>V</kbd> другой вариант ролика · <kbd>F</kbd>/<kbd>F5</kbd> экран · <kbd>B</kbd> чёрный экран · <kbd>H</kbd> подсказка</div>
+  </section>
+</div>
+<div id="black"></div>
+<div id="hud"></div>
+<script src="config_v4.js"></script>
+<script src="v4_clips.js" onerror="window.V2 = {}"></script>
+<script>
+(function () {
+  const V = window.V2 || {};
+  const PANEL_V2 = { B1: 'bottom', B5: 'bottom', B10: 'bottom' };   // в кадрах v2 боковая панель закрывала разворот/лицо
+  DECK.blocks.forEach(B => {
+    if (PANEL_V2[B.id]) { B.panel = PANEL_V2[B.id]; B.narrow = false; }
+    B.numbersOnPage = false;   // в книгах v2 цифр нет (V10 — распечатки скринов), цифры — в панели
+    const v = V[B.id];
+    if (!v) return;
+    B.clips = [v.clip];
+    if (v.baked && B.screen) { B.screen.quad = v.quad; B.screen.baked = true; B.screen.mask = null; }
+    if (v.baked && B.page) B.page.baked = true;
+    if (!v.baked) { B.screen = null; B.page = null; }   // экраны первой версии к кадрам v2 не подходят
+  });
+})();
+</script>
+<script src="masks.js"></script>
+<script>
+const D = window.DECK;
+const $ = (s, r = document) => r.querySelector(s);
+const stage = $('#stage'), cam = $('#cam'), vid = $('#vid'), poster = $('#poster');
+const K = 1920 / D.frame[0], OY = (1080 - D.frame[1] * K) / 2;   // кадр → сцена
+
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.transform = `translate(-50%,-50%) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* ---------- перспектива: четыре угла → matrix3d ---------- */
+const adj = m => [m[4]*m[8]-m[5]*m[7], m[2]*m[7]-m[1]*m[8], m[1]*m[5]-m[2]*m[4], m[5]*m[6]-m[3]*m[8], m[0]*m[8]-m[2]*m[6],
+                  m[2]*m[3]-m[0]*m[5], m[3]*m[7]-m[4]*m[6], m[1]*m[6]-m[0]*m[7], m[0]*m[4]-m[1]*m[3]];
+const mm = (a, b) => { const c = []; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) { let s = 0; for (let k = 0; k < 3; k++) s += a[3*i+k] * b[3*k+j]; c[3*i+j] = s; } return c; };
+const mv = (m, v) => [m[0]*v[0]+m[1]*v[1]+m[2]*v[2], m[3]*v[0]+m[4]*v[1]+m[5]*v[2], m[6]*v[0]+m[7]*v[1]+m[8]*v[2]];
+function basis(p) { const m = [p[0], p[2], p[4], p[1], p[3], p[5], 1, 1, 1]; const v = mv(adj(m), [p[6], p[7], 1]); return mm(m, [v[0], 0, 0, 0, v[1], 0, 0, 0, v[2]]); }
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+function placeQuad(el, quad) {            // quad в пикселях кадра; слой .film уже растянут на K
+  const q = quad.map(([x, y]) => [x * K, y * K]);
+  const w = (dist(q[0], q[1]) + dist(q[3], q[2])) / 2, h = (dist(q[0], q[3]) + dist(q[1], q[2])) / 2;
+  el.style.width = w + 'px'; el.style.height = h + 'px'; el.style.setProperty('--ph', h + 'px'); el.style.setProperty('--pw', w + 'px');
+  const t = mm(basis([q[0][0], q[0][1], q[1][0], q[1][1], q[3][0], q[3][1], q[2][0], q[2][1]]), adj(basis([0, 0, w, 0, 0, h, w, h])));
+  for (let i = 0; i < 9; i++) t[i] /= t[8];
+  el.style.transform = `matrix3d(${[t[0], t[3], 0, t[6], t[1], t[4], 0, t[7], 0, 0, 1, 0, t[2], t[5], 0, t[8]].join(',')})`;
+}
+
+/* ---------- состояние ---------- */
+const QS = new URLSearchParams(location.search);
+const DRAFT = QS.has('draft');                   // ?draft — показывать заглушки цифр («нужна цифра»)
+let cur = { b: -2, s: 0 }, token = 0, hud = QS.has('hud'), timers = [];
+const nums = B => B.numbers.filter(n => !n.stub || DRAFT);
+// заранее распаковать все стоп-кадры и первые кадры: смена блока без мелькания
+const STILLS = {};
+D.blocks.forEach(B => B.clips.forEach(c => ['first', 'last'].forEach(k => {
+  const im = new Image(); im.src = `media/${c}_${k}.jpg`; im.decode().catch(() => {}); STILLS[`${c}_${k}`] = im;
+})));
+const variant = {};
+const clipOf = B => B.clips[variant[B.id] || 0];
+const lastStep = B => 1 + (B.steps || []).length;          // 0 ролик, 1 стоп-кадр, 2.. шаги
+function later(fn, ms) { const t = token; timers.push(setTimeout(() => t === token && fn(), ms)); }
+function stopTimers() { timers.forEach(clearTimeout); timers = []; }
+function instant(el, on) { el.classList.toggle('instant', on); if (on) void el.offsetWidth; }
+
+function countUp(el, raw, delay) {
+  const m = String(raw).match(/^([^\d]*)(\d[\d\s]*\d|\d)(.*)$/);
+  if (!m || /N/.test(raw) || /^-/.test(m[3])) { el.textContent = raw; return; }   // «248-ФЗ» и заглушки не считаем
+  const [, pre, num, post] = m, to = +num.replace(/\s/g, ''), fmt = n => pre + n.toLocaleString('ru-RU') + post;
+  if (!isFinite(to) || to <= 1) { el.textContent = raw; return; }
+  el.textContent = fmt(0);
+  const t = token;
+  later(() => {
+    const t0 = performance.now(), dur = 1200;
+    (function f(now) {
+      if (t !== token) return;
+      const k = Math.min(1, (now - t0) / dur);
+      el.textContent = fmt(Math.round(to * (1 - Math.pow(1 - k, 3))));
+      if (k < 1) requestAnimationFrame(f); else el.textContent = raw;
+    })(t0);
+  }, delay);
+}
+const numHTML = n => `<div class="num rv"><b data-v="${n.v}">${n.v}</b><span>${n.l}</span>${n.stub ? '<em>нужна цифра</em>' : ''}</div>`;
+
+function loadBlock(B) {
+  const c = clipOf(B);
+  vid.removeAttribute('poster'); vid.poster = `media/${c}_first.jpg`;
+  vid.src = `media/${c}.mp4`; vid.dataset.clip = c;
+  poster.src = `media/${c}_first.jpg`;            // на время ролика под видео — его первый кадр; стоп-кадр ставится в go()
+  // экран в кадре
+  const L = $('#scrLayer'), S = $('#scr');
+  L.style.display = B.screen && !B.screen.baked ? '' : 'none';     // baked: интерфейс уже вклеен в ролик
+  if (B.screen && !B.screen.baked) {
+    if (B.screen.chat) {             // «напечатанный» диалог на странице книги
+      S.innerHTML = `<div class="chat">${B.screen.chat.map(m => `<div class="m ${m.q ? 'q' : ''}"><div class="who">${m.who}</div><div class="t">${m.t}</div></div>`).join('')}</div>`;
+    } else {
+      S.innerHTML = '<img alt="">';
+      const img = $('img', S);
+      img.src = B.screen.img; img.style.objectFit = B.screen.fit || 'cover'; img.style.objectPosition = B.screen.pos || 'center';
+    }
+    S.style.background = B.screen.bg || ''; S.classList.toggle('paper', !!B.screen.paper);
+    placeQuad(S, B.screen.quad);
+    L.classList.toggle('masked', !!B.screen.mask);
+    const mk = B.screen.mask && ((window.MASKS || {})[B.screen.mask] || B.screen.mask);
+    L.style.webkitMaskImage = L.style.maskImage = mk ? `url("${mk}")` : '';
+  }
+  // цифры на странице книги
+  const PL = $('#pageLayer'), P = $('#page');
+  PL.style.display = B.page && !B.page.baked ? '' : 'none';
+  if (B.page && !B.page.baked) {
+    placeQuad(P, B.page.quad);
+    P.innerHTML = nums(B).map(n => `<div class="pn"><b>${n.v}</b><span>${n.l}</span>${n.stub ? '<em>нужна цифра</em>' : ''}</div>`).join('');
+  }
+  // панель
+  const panel = $('#panel');
+  panel.className = B.panel + (B.narrow ? ' narrow' : '') + ' instant';   // старая панель не «уезжает» поверх нового ролика
+  const bi = D.blocks.indexOf(B) + 1;
+  const head = `<div class="kick rv"><span class="code">${String(bi).padStart(2, '0')} / ${D.blocks.length}</span><span>${B.kicker || ''}</span></div><div class="ttl rv">${B.title}</div>`;
+  const bl = `<ul class="bl">${B.bullets.map(x => `<li class="rv">${x}</li>`).join('')}</ul>`;
+  const nl = B.numbersOnPage ? [] : nums(B);
+  const numsHTML = nl.length ? `<div class="nums">${nl.map(numHTML).join('')}</div>` : '';
+  const qrHTML = B.qr ? `<div class="card qr"><img class="rv" src="${B.qr.img}" alt=""><span class="rv">${B.qr.label || ''}</span></div>` : '';
+  panel.innerHTML = (B.panel === 'bottom' && numsHTML ? `<div class="card">${head}${bl}</div><div class="card">${numsHTML}</div>`
+                                                      : `<div class="card">${head}${bl}${numsHTML}</div>`) + qrHTML;
+  panel.style.gridTemplateColumns = B.panel === 'bottom' ? (numsHTML ? '1.3fr 1fr' : '1fr') + (qrHTML ? ' auto' : '') : '';
+  void panel.offsetWidth;
+  // подгрузить следующий ролик заранее
+  const nb = D.blocks[D.blocks.indexOf(B) + 1];
+  if (nb) { const pv = document.createElement('video'); pv.preload = 'auto'; pv.muted = true; pv.src = `media/${clipOf(nb)}.mp4`; }
+}
+
+function showPanel(on, anim) {
+  const panel = $('#panel');
+  instant(panel, !anim);
+  panel.classList.toggle('on', on);
+  const items = [...panel.querySelectorAll('.rv')];
+  items.forEach((el, i) => { el.style.transitionDelay = anim && on ? `${250 + i * 110}ms` : '0ms'; el.classList.toggle('on', on); });
+  if (on) panel.querySelectorAll('.num b').forEach((b, i) => anim ? countUp(b, b.dataset.v, 500 + i * 250) : (b.textContent = b.dataset.v));
+  if (!anim) requestAnimationFrame(() => panel.classList.remove('instant'));
+}
+
+function camZoom(B, on, anim) {
+  instant(cam, !anim);
+  if (on && B.screen) {
+    const xs = B.screen.quad.map(p => p[0] * K), ys = B.screen.quad.map(p => p[1] * K + OY);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const s = Math.min(1920 / (x1 - x0), 1080 / (y1 - y0)) * .92, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    cam.style.transform = `translate(${960 - cx * s}px,${540 - cy * s}px) scale(${s})`;
+  } else cam.style.transform = 'none';
+  if (!anim) requestAnimationFrame(() => cam.classList.remove('instant'));
+}
+
+function showSlide(B, s, anim) {
+  const sl = $('#slide');
+  instant(sl, !anim);
+  const st = s >= 2 ? B.steps[s - 2] : null;
+  if (!st) { sl.classList.remove('on'); return; }            // содержимое гаснет вместе со слайдом, без пустого фона
+  if (st.type === 'zoom') {
+    sl.innerHTML = `<img class="shot${st.phone ? ' phone' : ''}" src="${st.img}" alt="" style="${st.bg ? 'background:' + st.bg : ''}"><div class="cap">${st.caption || ''}</div>`;
+  } else if (st.type === 'list') {
+    sl.innerHTML = `<div class="list${st.qr ? ' with-qr' : ''}"><h2>${st.title}</h2><ol>${st.items.map(x => `<li class="rv">${x}</li>`).join('')}</ol>
+      ${st.source ? `<div class="src">Источник: ${st.source}</div>` : ''}</div>
+      ${st.qr ? `<div class="list-qr rv"><img src="${st.qr.img}" alt="QR-код: страница ЕПГУ на monitoring.gov.ru"><span>${st.qr.label || ''}</span></div>` : ''}`;
+  } else if (st.type === 'scroll') {
+    sl.innerHTML = `<div class="scrollbox"><img src="${st.img}" alt=""></div><div class="cap">${st.caption || ''}</div>`;
+  }
+  const reveal = () => {
+    sl.classList.add('on');
+    sl.querySelectorAll('.rv').forEach((el, i) => { el.style.transitionDelay = anim ? `${200 + i * 90}ms` : '0ms'; el.classList.add('on'); });
+    if (st.type === 'scroll') {
+      const img = $('.scrollbox img', sl);
+      const run = () => {
+        const d = img.getBoundingClientRect().height / (stage.getBoundingClientRect().height / 1080) - 890;
+        if (d > 0) img.animate([{ transform: 'translateY(0)' }, { transform: `translateY(${-d}px)` }],
+                               { duration: Math.max(6000, d * 6), delay: 700, easing: 'ease-in-out', fill: 'forwards' });
+      };
+      img.complete ? run() : img.onload = run;
+    }
+  };
+  const prevStep = sl.classList.contains('on');
+  if (anim && !prevStep && st.type === 'zoom' && B.screen) later(reveal, 650);    // сначала наезд камеры, потом скрин крупно
+  else reveal();
+  if (!anim) requestAnimationFrame(() => sl.classList.remove('instant'));
+}
+
+function go(b, s, opt = {}) {
+  token++; stopTimers();
+  const changed = b !== cur.b || opt.reload;
+  cur = { b, s };
+  const toc = $('#toc');
+  if (b < 0) {
+    toc.classList.add('on'); vid.pause(); drawHud(); return;
+  }
+  toc.classList.remove('on');
+  const B = D.blocks[b];
+  if (changed) loadBlock(B);
+  const anim = !!opt.anim;
+  // ролик / стоп-кадр
+  poster.src = `media/${clipOf(B)}_${s === 0 ? 'first' : 'last'}.jpg`;
+  if (s === 0) {
+    vid.classList.remove('hidden'); vid.currentTime = 0;
+    if (!blackOn()) vid.play().catch(() => {});
+  } else {
+    vid.pause(); vid.classList.add('hidden');
+  }
+  // экран в кадре и страница книги — со стоп-кадра и дальше
+  const a2 = anim && !changed && s > 0;                  // при смене блока слои и камеру ставим сразу, без отъезда поверх нового ролика
+  for (const id of ['#scrLayer', '#pageLayer']) { const L = $(id); instant(L, !a2); L.classList.toggle('on', s >= 1); if (!a2) requestAnimationFrame(() => L.classList.remove('instant')); }
+  showPanel(s === 1, anim);
+  camZoom(B, s >= 2 && !!B.screen, a2);
+  showSlide(B, s, anim);
+  drawHud();
+}
+vid.addEventListener('ended', () => {
+  if (cur.b >= 0 && cur.s === 0 && vid.dataset.clip === clipOf(D.blocks[cur.b])) {
+    lastNav = performance.now() + 500;           // нажатие в момент конца ролика не проскакивает стоп-кадр
+    go(cur.b, 1, { anim: true });
+  }
+});
+
+function next() {
+  if (cur.b < 0) return go(0, 0, { anim: true });
+  const B = D.blocks[cur.b];
+  if (cur.s < lastStep(B)) return go(cur.b, cur.s + 1, { anim: true });
+  if (cur.b < D.blocks.length - 1) go(cur.b + 1, 0, { anim: true });
+}
+function prev() {
+  if (cur.b < 0) return;
+  if (cur.s >= 2) return go(cur.b, cur.s - 1, { anim: true });
+  if (cur.b === 0) return go(-1, 0);
+  go(cur.b - 1, 1, { anim: false });           // предыдущий блок — сразу стоп-кадр
+}
+function drawBar() {
+  const b = cur.b;
+  stage.classList.toggle('frozen', b >= 0 && cur.s >= 1);
+  stage.classList.toggle('inslide', b >= 0 && cur.s >= 2);
+  if (b < 0) return;
+  $('#barT').textContent = `${String(b + 1).padStart(2, '0')} · ${D.blocks[b].title}`;
+  $('#barK').textContent = 'Роструд · цифровизация контроля (надзора)';
+  $('#barS').innerHTML = D.blocks.map((_, i) => `<i class="${i < b ? 'done' : i === b ? 'cur' : ''}"></i>`).join('');
+}
+function drawHud() {
+  drawBar();
+  const h = $('#hud');
+  h.style.display = hud ? '' : 'none';
+  $('#toc .hint').style.display = hud ? '' : 'none';
+  if (cur.b < 0) { h.textContent = 'оглавление'; return; }
+  const B = D.blocks[cur.b], names = ['ролик', 'стоп-кадр'];
+  const st = cur.s < 2 ? names[cur.s] : ({ zoom: 'экран крупно', list: 'список', scroll: 'прокрутка' })[B.steps[cur.s - 2].type];
+  h.textContent = `${B.id} · ${st} · ${clipOf(B)} · ${cur.s + 1}/${lastStep(B) + 1}`;
+}
+
+/* ---------- оглавление ---------- */
+$('#toc .kick').textContent = D.subtitle;
+$('#toc h1').textContent = D.title;
+$('#toc .bg').style.backgroundImage = `url(media/${D.blocks[0].clips[0]}_last.jpg)`;
+$('#toc ol').innerHTML = D.blocks.map((B, i) => `<li data-go="${i}" style="background-image:url(media/${B.clips[0]}_last.jpg)"><span class="n">${String(i + 1).padStart(2, '0')}</span><span class="t">${B.title}</span></li>`).join('');
+
+/* ---------- управление: кликер = клавиатура; дребезг и автоповтор не листают ---------- */
+let lastNav = 0;
+function nav(fn, ...a) { const t = performance.now(); if (t - lastNav < 250) return; lastNav = t; fn(...a); }
+const blackOn = () => $('#black').style.display === 'block';
+function setBlack(v) {
+  $('#black').style.display = v ? 'block' : 'none';
+  if (cur.b >= 0 && cur.s === 0) v ? vid.pause() : vid.play().catch(() => {});   // ролик под чёрным не идёт вслепую
+}
+$('#black').addEventListener('click', e => { if (e.detail === 1) setBlack(false); });
+const fullscreen = () => document.fullscreenElement || document.documentElement.requestFullscreen().catch(() => {});
+const NEXT = ['ArrowRight', 'PageDown', 'ArrowDown', ' ', 'Enter'], PREV = ['ArrowLeft', 'PageUp', 'ArrowUp', 'Backspace'];
+const DIGIT = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Digit5: 4, Digit6: 5, Digit7: 6, Digit8: 7, Digit9: 8, Digit0: 9, Minus: 10 };
+addEventListener('keydown', e => {
+  const k = e.key, c = e.code;
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
+  if (NEXT.includes(k) || PREV.includes(k) || k === 'F5') e.preventDefault();
+  if (e.repeat) return;
+  if (blackOn() && (NEXT.includes(k) || PREV.includes(k) || k === 'Escape')) return setBlack(false);
+  if (NEXT.includes(k)) nav(next);
+  else if (PREV.includes(k)) nav(prev);
+  else if (k === 'F5') fullscreen();
+  else if (k === 'Escape') { /* Esc ничего не листает */ }
+  else if (c === 'KeyT' || k === 'Home') nav(go, -1, 0);
+  else if (c === 'KeyR' && cur.b >= 0) nav(go, cur.b, 0, { anim: true, reload: true });
+  else if (c === 'KeyV' && cur.b >= 0 && D.blocks[cur.b].clips.length > 1) {
+    const B = D.blocks[cur.b]; variant[B.id] = ((variant[B.id] || 0) + 1) % B.clips.length;
+    nav(go, cur.b, 0, { anim: true, reload: true });
+  }
+  else if (c === 'KeyF') document.fullscreenElement ? document.exitFullscreen() : fullscreen();
+  else if (c === 'KeyH') { hud = !hud; drawHud(); }
+  else if (c === 'KeyB' || c === 'Period' || k === '.') setBlack(!blackOn());
+  else if (c in DIGIT && DIGIT[c] < D.blocks.length) nav(go, DIGIT[c], 0, { anim: true, reload: DIGIT[c] === cur.b });
+});
+let focusAt = 0;
+addEventListener('focus', () => focusAt = performance.now());
+stage.addEventListener('mousedown', e => { if (e.detail > 1) e.preventDefault(); });
+stage.addEventListener('click', e => {
+  if (e.detail > 1 || performance.now() - focusAt < 500) return;
+  const li = e.target.closest('[data-go]');
+  if (li) return nav(go, +li.dataset.go, 0, { anim: true });
+  if (e.target.closest('#toc ol')) return;
+  nav(next);
+});
+
+// ?b=3&s=1 — сразу блок и шаг (для проверки)
+const q = new URLSearchParams(location.search);
+q.has('b') ? go(+q.get('b'), +(q.get('s') || 0), { anim: false }) : go(-1, 0);
+</script>
+</body>
+</html>
