@@ -117,18 +117,6 @@ body{font-family:var(--din);color:var(--text);-webkit-font-smoothing:antialiased
 
 #black{position:fixed;inset:0;background:#000;z-index:100;display:none}
 #hud{position:fixed;right:12px;bottom:10px;font:13px/1.3 Consolas,monospace;color:#8ea0c8;background:rgba(0,0,0,.6);padding:6px 10px;z-index:99}
-
-/* v4: QR-код рядом с панелью (целые пиксели на модуль — make_qr.py, scale 6 → 246 px) */
-.card.qr{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px 18px 12px;background:#fff}
-.card.qr img{display:block;width:246px;height:246px;image-rendering:pixelated}
-.card.qr span{font-family:var(--mono);font-size:18px;letter-spacing:.04em;color:#0a0c0f}
-#panel:not(.bottom) .card.qr{margin-top:14px;align-items:flex-start}
-/* QR у списка ЕПГУ: отдельная колонка, все восемь пунктов остаются на одном слайде. */
-.list.with-qr{right:490px}
-.list.with-qr ol{column-gap:46px}
-.list-qr{position:absolute;right:100px;top:440px;width:302px;display:flex;flex-direction:column;align-items:center;gap:16px;padding:16px;background:#fff}
-.list-qr img{display:block;width:270px;height:270px;image-rendering:pixelated}
-.list-qr span{font-family:var(--mono);font-size:20px;color:#0a0c0f;text-align:center}
 /* v4: одна ссылка в углу главного экрана; во время показа скрыта. */
 .speech-downloads{position:fixed;right:max(16px,env(safe-area-inset-right));top:max(16px,env(safe-area-inset-top));z-index:10;font-family:var(--mono);font-size:16px;line-height:1.3;color:var(--muted)}
 .speech-downloads[hidden]{display:none}
@@ -293,10 +281,9 @@ function loadBlock(B) {
   const bl = `<ul class="bl">${B.bullets.map(x => `<li class="rv">${x}</li>`).join('')}</ul>`;
   const nl = B.numbersOnPage ? [] : nums(B);
   const numsHTML = nl.length ? `<div class="nums">${nl.map(numHTML).join('')}</div>` : '';
-  const qrHTML = B.qr ? `<div class="card qr"><img class="rv" src="${B.qr.img}" alt=""><span class="rv">${B.qr.label || ''}</span></div>` : '';
-  panel.innerHTML = (B.panel === 'bottom' && numsHTML ? `<div class="card">${head}${bl}</div><div class="card">${numsHTML}</div>`
-                                                      : `<div class="card">${head}${bl}${numsHTML}</div>`) + qrHTML;
-  panel.style.gridTemplateColumns = B.panel === 'bottom' ? (numsHTML ? '1.3fr 1fr' : '1fr') + (qrHTML ? ' auto' : '') : '';
+  panel.innerHTML = B.panel === 'bottom' && numsHTML ? `<div class="card">${head}${bl}</div><div class="card">${numsHTML}</div>`
+                                                     : `<div class="card">${head}${bl}${numsHTML}</div>`;
+  panel.style.gridTemplateColumns = B.panel === 'bottom' && !numsHTML ? '1fr' : '';
   void panel.offsetWidth;
   // подгрузить следующий ролик заранее
   const nb = D.blocks[D.blocks.indexOf(B) + 1];
@@ -330,11 +317,19 @@ function showSlide(B, s, anim) {
   const st = s >= 2 ? B.steps[s - 2] : null;
   if (!st) { sl.classList.remove('on'); return; }            // содержимое гаснет вместе со слайдом, без пустого фона
   if (st.type === 'zoom') {
-    sl.innerHTML = `<img class="shot${st.phone ? ' phone' : ''}" src="${st.img}" alt="" style="${st.bg ? 'background:' + st.bg : ''}"><div class="cap">${st.caption || ''}</div>`;
+    if (st.crop) {
+      const [w, h] = st.crop.frame, [sw, sh] = st.crop.source;
+      sl.innerHTML = `<svg class="shot" width="${860 * w / h}" height="860" viewBox="0 0 ${w} ${h}" role="img" aria-label="${st.caption || ''}" xmlns="http://www.w3.org/2000/svg">
+        <defs><clipPath id="pamphletClip"><path d="${st.crop.path}"/></clipPath></defs>
+        <rect width="${w}" height="${h}" fill="#ecedef"/>
+        <image href="${st.img}" width="${sw}" height="${sh}" clip-path="url(#pamphletClip)"/>
+      </svg><div class="cap">${st.caption || ''}</div>`;
+    } else {
+      sl.innerHTML = `<img class="shot${st.phone ? ' phone' : ''}" src="${st.img}" alt="" style="${st.bg ? 'background:' + st.bg : ''}"><div class="cap">${st.caption || ''}</div>`;
+    }
   } else if (st.type === 'list') {
-    sl.innerHTML = `<div class="list${st.qr ? ' with-qr' : ''}"><h2>${st.title}</h2><ol>${st.items.map(x => `<li class="rv">${x}</li>`).join('')}</ol>
-      ${st.source ? `<div class="src">Источник: ${st.source}</div>` : ''}</div>
-      ${st.qr ? `<div class="list-qr rv"><img src="${st.qr.img}" alt="QR-код: страница ЕПГУ на monitoring.gov.ru"><span>${st.qr.label || ''}</span></div>` : ''}`;
+    sl.innerHTML = `<div class="list"><h2>${st.title}</h2><ol>${st.items.map(x => `<li class="rv">${x}</li>`).join('')}</ol>
+      ${st.source ? `<div class="src">Источник: ${st.source}</div>` : ''}</div>`;
   } else if (st.type === 'scroll') {
     sl.innerHTML = `<div class="scrollbox"><img src="${st.img}" alt=""></div><div class="cap">${st.caption || ''}</div>`;
   }
