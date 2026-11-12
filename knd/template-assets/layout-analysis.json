@@ -1,0 +1,731 @@
+{
+  "1": {
+    "background": "<ns0:bg xmlns:ns0=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:ns1=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:bgPr><ns1:gradFill flip=\"none\" rotWithShape=\"1\"><ns1:gsLst><ns1:gs pos=\"30000\"><ns1:schemeClr val=\"bg2\"><ns1:lumMod val=\"50000\" /></ns1:schemeClr></ns1:gs><ns1:gs pos=\"99000\"><ns1:srgbClr val=\"1150AA\" /></ns1:gs></ns1:gsLst><ns1:lin ang=\"5400000\" scaled=\"1\" /><ns1:tileRect /></ns1:gradFill><ns1:effectLst /></ns0:bgPr></ns0:bg>",
+    "shapes": [
+      {
+        "tag": "nvGrpSpPr",
+        "name": "",
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": []
+      },
+      {
+        "tag": "grpSpPr",
+        "name": null,
+        "box1920": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": []
+      },
+      {
+        "tag": "sp",
+        "name": "Прямоугольник 1",
+        "box1920": [
+          0.0,
+          877.22,
+          1920.0,
+          203.58
+        ],
+        "text": "",
+        "colors": [
+          {
+            "val": "FFFFFF"
+          }
+        ],
+        "fonts": [
+          {
+            "typeface": "Helvetica Neue Medium"
+          }
+        ],
+        "textProps": []
+      },
+      {
+        "tag": "sp",
+        "name": "Заголовок презентации",
+        "box1920": [
+          188.75,
+          434.13,
+          1640.5,
+          95.93
+        ],
+        "text": "Заголовок| |презентации",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "dirty": "0",
+            "err": "1"
+          },
+          {
+            "dirty": "0"
+          },
+          {
+            "dirty": "0",
+            "err": "1"
+          },
+          {
+            "sz": "4000",
+            "b": "1",
+            "spc": "0"
+          }
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "Текст 7",
+        "box1920": [
+          188.75,
+          689.8,
+          825.92,
+          41.63
+        ],
+        "text": "Имя Отчество Фамилия",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "dirty": "0"
+          },
+          {
+            "sz": "1500",
+            "b": "1"
+          }
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "Текст 7",
+        "box1920": [
+          188.75,
+          762.69,
+          825.92,
+          41.63
+        ],
+        "text": "Должность",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "dirty": "0"
+          },
+          {
+            "sz": "1500",
+            "b": "0"
+          }
+        ]
+      },
+      {
+        "tag": "pic",
+        "name": "Рисунок 10",
+        "box1920": [
+          91.9,
+          876.99,
+          298.21,
+          124.41
+        ],
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": [],
+        "image": "../media/image1.png"
+      },
+      {
+        "tag": "sp",
+        "name": "TextBox 12",
+        "box1920": [
+          109.36,
+          1000.45,
+          263.29,
+          59.33
+        ],
+        "text": "Правительство Российской Федерации",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "+mn-lt"
+          }
+        ],
+        "textProps": [
+          {
+            "kumimoji": "0",
+            "lang": "ru-RU",
+            "sz": "1000",
+            "b": "1",
+            "i": "0",
+            "u": "none",
+            "strike": "noStrike",
+            "cap": "none",
+            "spc": "0",
+            "normalizeH": "0",
+            "baseline": "0",
+            "dirty": "0"
+          }
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "TextBox 18",
+        "box1920": [
+          194.8,
+          210.07,
+          748.76,
+          59.33
+        ],
+        "text": "Форум контрольных органов – 2026",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "kumimoji": "0",
+            "lang": "ru-RU",
+            "sz": "2000",
+            "b": "0",
+            "i": "0",
+            "u": "none",
+            "strike": "noStrike",
+            "cap": "none",
+            "spc": "0",
+            "normalizeH": "0",
+            "baseline": "0",
+            "dirty": "0"
+          }
+        ]
+      },
+      {
+        "tag": "pic",
+        "name": "Рисунок 5",
+        "box1920": [
+          191.93,
+          72.18,
+          520.39,
+          127.57
+        ],
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": [],
+        "image": "../media/image2.png"
+      },
+      {
+        "tag": "pic",
+        "name": "Picture 8",
+        "box1920": [
+          612.25,
+          887.58,
+          117.62,
+          117.62
+        ],
+        "text": "",
+        "colors": [
+          {
+            "val": "FFFFFF"
+          }
+        ],
+        "fonts": [],
+        "textProps": [],
+        "image": "../media/image3.png"
+      },
+      {
+        "tag": "sp",
+        "name": "TextBox 7",
+        "box1920": [
+          443.6,
+          1002.72,
+          454.32,
+          59.33
+        ],
+        "text": "Министерство экономического развития Российской федерации",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "+mn-lt"
+          }
+        ],
+        "textProps": [
+          {
+            "kumimoji": "0",
+            "lang": "ru-RU",
+            "sz": "1000",
+            "b": "1",
+            "i": "0",
+            "u": "none",
+            "strike": "noStrike",
+            "cap": "none",
+            "spc": "0",
+            "normalizeH": "0",
+            "baseline": "0",
+            "dirty": "0"
+          }
+        ]
+      },
+      {
+        "tag": "pic",
+        "name": "Рисунок 9",
+        "box1920": [
+          892.0,
+          919.77,
+          449.52,
+          117.62
+        ],
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": [],
+        "image": "../media/image4.png"
+      },
+      {
+        "tag": "pic",
+        "name": "Рисунок 13",
+        "box1920": [
+          1358.13,
+          904.94,
+          438.94,
+          147.28
+        ],
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": [],
+        "image": "../media/image5.png"
+      }
+    ]
+  },
+  "2": {
+    "background": "<ns0:bg xmlns:ns0=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:ns1=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:bgPr><ns1:solidFill><ns1:schemeClr val=\"bg2\"><ns1:lumMod val=\"50000\" /></ns1:schemeClr></ns1:solidFill><ns1:effectLst /></ns0:bgPr></ns0:bg>",
+    "shapes": [
+      {
+        "tag": "nvGrpSpPr",
+        "name": "",
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": []
+      },
+      {
+        "tag": "grpSpPr",
+        "name": null,
+        "box1920": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": []
+      },
+      {
+        "tag": "pic",
+        "name": "Рисунок 2",
+        "box1920": [
+          0.0,
+          144.65,
+          1920.0,
+          856.34
+        ],
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": [],
+        "image": "../media/image6.png"
+      },
+      {
+        "tag": "sp",
+        "name": "Текст 5",
+        "box1920": [
+          189.0,
+          55.25,
+          1153.63,
+          80.78
+        ],
+        "text": "Заголовок слайда",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "dirty": "0"
+          },
+          {
+            "sz": "4000",
+            "b": "1"
+          }
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "Текст 7",
+        "box1920": [
+          189.0,
+          185.51,
+          1053.41,
+          46.95
+        ],
+        "text": "Подзаголовок",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "dirty": "0"
+          },
+          {
+            "sz": "2000",
+            "b": "0"
+          }
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "Текст 9",
+        "box1920": [
+          189.0,
+          334.82,
+          678.5,
+          30.29
+        ],
+        "text": "Образец текста",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "dirty": "0"
+          },
+          {
+            "sz": "1600"
+          }
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "Текст 9",
+        "box1920": [
+          188.75,
+          769.33,
+          678.5,
+          23.03
+        ],
+        "text": "Источник",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "dirty": "0"
+          },
+          {
+            "sz": "1400",
+            "b": "0"
+          }
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "Номер слайда",
+        "box1920": [
+          1819.33,
+          1031.83,
+          73.37,
+          26.66
+        ],
+        "text": "‹#›",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Verdana",
+            "panose": "020B0604030504040204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "smtClean": "0"
+          },
+          {
+            "sz": "1100",
+            "spc": "44"
+          },
+          {},
+          {}
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "Диаграмма 3",
+        "box1920": [
+          188.75,
+          388.88,
+          887.25,
+          353.37
+        ],
+        "text": "График или диаграмма",
+        "colors": [],
+        "fonts": [],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "dirty": "0"
+          },
+          {
+            "sz": "1100",
+            "b": "1",
+            "baseline": "0"
+          }
+        ]
+      },
+      {
+        "tag": "pic",
+        "name": "Рисунок 8",
+        "box1920": [
+          1626.91,
+          7.93,
+          281.09,
+          68.91
+        ],
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": [],
+        "image": "../media/image2.png"
+      }
+    ]
+  },
+  "3": {
+    "background": "<ns0:bg xmlns:ns0=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:ns1=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><ns0:bgPr><ns1:gradFill flip=\"none\" rotWithShape=\"1\"><ns1:gsLst><ns1:gs pos=\"1000\"><ns1:srgbClr val=\"1150AA\" /></ns1:gs><ns1:gs pos=\"70000\"><ns1:schemeClr val=\"bg2\"><ns1:lumMod val=\"50000\" /></ns1:schemeClr></ns1:gs></ns1:gsLst><ns1:lin ang=\"16200000\" scaled=\"1\" /><ns1:tileRect /></ns1:gradFill><ns1:effectLst /></ns0:bgPr></ns0:bg>",
+    "shapes": [
+      {
+        "tag": "nvGrpSpPr",
+        "name": "",
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": []
+      },
+      {
+        "tag": "grpSpPr",
+        "name": null,
+        "box1920": [
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": []
+      },
+      {
+        "tag": "sp",
+        "name": "Заголовок презентации",
+        "box1920": [
+          188.75,
+          493.04,
+          1640.5,
+          96.94
+        ],
+        "text": "Спасибо за внимание!",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "dirty": "0"
+          },
+          {
+            "sz": "4000",
+            "b": "1",
+            "spc": "0"
+          }
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "Текст 7",
+        "box1920": [
+          189.0,
+          742.62,
+          825.92,
+          41.63
+        ],
+        "text": "Имя Отчество Фамилия",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "dirty": "0"
+          },
+          {
+            "sz": "1500",
+            "b": "1"
+          }
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "Текст 7",
+        "box1920": [
+          189.0,
+          824.36,
+          825.92,
+          41.63
+        ],
+        "text": "Должность",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "lang": "ru-RU",
+            "dirty": "0"
+          },
+          {
+            "sz": "1500",
+            "b": "0"
+          }
+        ]
+      },
+      {
+        "tag": "sp",
+        "name": "TextBox 8",
+        "box1920": [
+          194.8,
+          210.07,
+          748.76,
+          59.33
+        ],
+        "text": "Форум контрольных органов – 2026",
+        "colors": [],
+        "fonts": [
+          {
+            "typeface": "Arial",
+            "panose": "020B0604020202020204",
+            "pitchFamily": "34",
+            "charset": "0"
+          }
+        ],
+        "textProps": [
+          {
+            "kumimoji": "0",
+            "lang": "ru-RU",
+            "sz": "2000",
+            "b": "0",
+            "i": "0",
+            "u": "none",
+            "strike": "noStrike",
+            "cap": "none",
+            "spc": "0",
+            "normalizeH": "0",
+            "baseline": "0",
+            "dirty": "0"
+          }
+        ]
+      },
+      {
+        "tag": "pic",
+        "name": "Рисунок 1",
+        "box1920": [
+          191.93,
+          72.18,
+          520.39,
+          127.57
+        ],
+        "text": "",
+        "colors": [],
+        "fonts": [],
+        "textProps": [],
+        "image": "../media/image2.png"
+      }
+    ]
+  }
+}

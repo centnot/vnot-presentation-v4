@@ -1,0 +1,12 @@
+{
+  "date": "2026-11-12",
+  "node_regression_tests": {
+    "passed": 12,
+    "failed": 0,
+    "old_controller_failed": 12
+  },
+  "portable_full_cpu_rebuild": true,
+  "source_asset_count": 33,
+  "secrets_excluded": true,
+  "root_presentation_preserved": true
+}

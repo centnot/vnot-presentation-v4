@@ -1,0 +1,134 @@
+{
+  "source-assets/interfaces/erknm_card.jpg": {
+    "bytes": 110783,
+    "sha256": "2ee0f91294fe2334dfd2246713bb6aa446ed215c0e58b50f8fc6598a6b0ec0a6"
+  },
+  "source-assets/interfaces/mp_checklist.png": {
+    "bytes": 85092,
+    "sha256": "9936a61bbd417e93f7ba8a6ce3cd417e5f202370445050700af78bb7099b3680"
+  },
+  "source-assets/interfaces/mp_checklist_photo.png": {
+    "bytes": 255376,
+    "sha256": "0a495c3d35d2b7286ff57d7862f6fcd8c204b2591bef4a8ab77eec4a017dbae3"
+  },
+  "source-assets/interfaces/mp_split.jpg": {
+    "bytes": 95848,
+    "sha256": "7d9388e5733998d18aee84c6b057ced2576f741139160019c7e46f73070252e6"
+  },
+  "source-assets/interfaces/scheme.jpg": {
+    "bytes": 638570,
+    "sha256": "285647f9b261d905002a2b02c40712ac32acf6af13ebaf2c1bc91424eac2e36d"
+  },
+  "source-assets/interfaces/v3_spread_ai.png": {
+    "bytes": 2098740,
+    "sha256": "6f3125dba16d7f60459ab66333be67d39f3fff2aa0f1ddfc7d2f747f6fdb12b5"
+  },
+  "source-assets/raw-media/V10_1344x768_s1001_00001__1080p_00001_.mp4": {
+    "bytes": 5900793,
+    "sha256": "c4f9e5b2ffc1a4c4e056c9ac6143f96222999019e13bfb8229b249e2ad3e50c8"
+  },
+  "source-assets/raw-media/V3_1344x768_s313_00001__1080p_00001_.mp4": {
+    "bytes": 6409152,
+    "sha256": "38d8f73182613282b79ebbb4e9be924e6fae2b8eb8f90386ca38de56322458b4"
+  },
+  "source-assets/raw-media/V4_1344x768_s406_00001__1080p_00001_.mp4": {
+    "bytes": 3644538,
+    "sha256": "d19bda130213131b5ee93041a81f7ed39a45b4e6524f65abfe300175cb7b8490"
+  },
+  "source-assets/raw-media/V5_1344x768_s502_00001__1080p_00001_.mp4": {
+    "bytes": 5107588,
+    "sha256": "fa0f0d0c90e808ded59e050297155421e4ed8d4045b3ca0c3a96d695106e3f63"
+  },
+  "source-assets/raw-media/V6_1344x768_s602_00001__1080p_00001_.mp4": {
+    "bytes": 9434178,
+    "sha256": "581ca4414b778593a51cc4513f2600881de4f981759d966791f9d5b18d720163"
+  },
+  "source-assets/raw-media/V7_1344x768_s703_00001__1080p_00001_.mp4": {
+    "bytes": 5975360,
+    "sha256": "490952ee923ac551cda360415b678bba794ebaf6c76e03a60a3716a404d6f88e"
+  },
+  "template-assets/closing-bg.png": {
+    "bytes": 31040,
+    "sha256": "f625e8badeed6bd388e299211a4743da0a6c1789a615f36e103a5dedea70b8b5"
+  },
+  "template-assets/content-bg.png": {
+    "bytes": 39623,
+    "sha256": "9c9ac83aeda95e157e2b0b9d759af7904ee239898ceaed71eda465aedcb792fb"
+  },
+  "template-assets/cover-bg.png": {
+    "bytes": 130356,
+    "sha256": "8a86c5250683a3b57fa5c217ee4dc9825257995b587fe7998578ae782e961094"
+  },
+  "template-assets/csr.png": {
+    "bytes": 15859,
+    "sha256": "b992973901cde76d1541e216c0913258bac0c971a90f70e2167acbe18b1c494d"
+  },
+  "template-assets/forum-logo.png": {
+    "bytes": 13578,
+    "sha256": "2fe73340234facc318b26a189b2ae9f66fbcb7c43f9717b9a858c83ab7f049bf"
+  },
+  "template-assets/forum-pattern.png": {
+    "bytes": 92637,
+    "sha256": "b76ca5002289c1468736bb051b6682c34bdea141c410534195bf769723244f49"
+  },
+  "template-assets/government.png": {
+    "bytes": 67040,
+    "sha256": "f369d0e04a9c574f9d713ad06ae49bcc2ce4d9f389428bf53308723e744aec70"
+  },
+  "template-assets/hdphoto1.wdp": {
+    "bytes": 177625,
+    "sha256": "52768c25dab3a4cc2bc22ca04816e153ff60d0e5f84b0077b970ce0103e0ac84"
+  },
+  "template-assets/image1.png": {
+    "bytes": 67040,
+    "sha256": "f369d0e04a9c574f9d713ad06ae49bcc2ce4d9f389428bf53308723e744aec70"
+  },
+  "template-assets/image2.png": {
+    "bytes": 13578,
+    "sha256": "2fe73340234facc318b26a189b2ae9f66fbcb7c43f9717b9a858c83ab7f049bf"
+  },
+  "template-assets/image3.png": {
+    "bytes": 20358,
+    "sha256": "10a970553fe87e885ec5ef5456102a62d067f2d7b1855902338979f37687f9ff"
+  },
+  "template-assets/image4.png": {
+    "bytes": 15859,
+    "sha256": "b992973901cde76d1541e216c0913258bac0c971a90f70e2167acbe18b1c494d"
+  },
+  "template-assets/image5.png": {
+    "bytes": 14359,
+    "sha256": "9e1b0b794fa579a5192caa7fa3db28841cd6e7afe18105768e02767d1668be71"
+  },
+  "template-assets/image6.png": {
+    "bytes": 92637,
+    "sha256": "b76ca5002289c1468736bb051b6682c34bdea141c410534195bf769723244f49"
+  },
+  "template-assets/khabarovsk.png": {
+    "bytes": 14359,
+    "sha256": "9e1b0b794fa579a5192caa7fa3db28841cd6e7afe18105768e02767d1668be71"
+  },
+  "template-assets/layout-analysis.json": {
+    "bytes": 16298,
+    "sha256": "b2e58f0b5e22881983e94ee0d500912aa43327a9c32b4743fdd154160a7e03cd"
+  },
+  "template-assets/ministry.png": {
+    "bytes": 20358,
+    "sha256": "10a970553fe87e885ec5ef5456102a62d067f2d7b1855902338979f37687f9ff"
+  },
+  "template-assets/slide-1.png": {
+    "bytes": 130356,
+    "sha256": "8a86c5250683a3b57fa5c217ee4dc9825257995b587fe7998578ae782e961094"
+  },
+  "template-assets/slide-2.png": {
+    "bytes": 39818,
+    "sha256": "58d2c44b835f9d8d0c0cbf70067fec7a69ceee46b5e417ff233e31e5c6396eca"
+  },
+  "template-assets/slide-3.png": {
+    "bytes": 31040,
+    "sha256": "f625e8badeed6bd388e299211a4743da0a6c1789a615f36e103a5dedea70b8b5"
+  },
+  "template-assets/template-reference.css": {
+    "bytes": 1373,
+    "sha256": "3453823422ed73ff08db295084b927e1544397931804db5b82dacb74913539a6"
+  }
+}

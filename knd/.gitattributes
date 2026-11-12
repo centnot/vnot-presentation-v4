@@ -1,0 +1,13 @@
+*.sh text eol=lf
+*.py text eol=lf
+*.json text eol=lf
+*.mjs text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.png binary
+*.jpg binary
+*.mp4 binary
+*.pptx binary

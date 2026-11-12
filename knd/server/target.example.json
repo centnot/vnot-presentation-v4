@@ -1,0 +1,9 @@
+{
+  "server_id": "PLACEHOLDER_SERVER_UUID",
+  "ip": "PLACEHOLDER_SERVER_IP",
+  "region": "PLACEHOLDER_REGION",
+  "project_id": "PLACEHOLDER_PROJECT_UUID",
+  "ssh_user": "root",
+  "ssh_key_path": "~/.ssh/knd_selectel_ed25519",
+  "credentials_path": "~/.config/knd-private/openrc.sh"
+}

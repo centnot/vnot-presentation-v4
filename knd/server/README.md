@@ -1,0 +1,169 @@
+# GPU-сервер КНД
+
+Пакет содержит код для продолжения работы с существующим Selectel-сервером
+и для установки окружения на новый Ubuntu-сервер. IP, UUID проекта и сервера,
+OpenStack-доступ и SSH-ключи в репозитории отсутствуют.
+
+## Состояние на момент передачи
+
+Последняя подтверждённая проверка 12 ноября 2026 года: сервер находился в
+`SHELVED_OFFLOADED`, `task_state=null`. Модели и окружение сохранены на сетевом
+загрузочном диске. Это запись о последней проверке; текущее состояние получают
+командой `status`, а не предполагают по этому файлу.
+
+Проверенная конфигурация:
+
+- NVIDIA RTX PRO 6000 Blackwell Server Edition, 96 GB; 16 vCPU и 120 GB RAM.
+- **Сетевой загрузочный диск 300 GB**, flavor `disk=0`. Локальный загрузочный
+  диск Selectel не позволяет замораживать через shelving; дополнительный
+  сетевой диск рядом с локальным загрузочным диском это ограничение не снимает.
+- Ubuntu 26.04.1 LTS, NVIDIA open driver 595.99.02.
+- Python 3.12.16; PyTorch 2.14.1 + CUDA 13.0, torchvision 0.29.1,
+  torchaudio 2.11.0. Bootstrap фиксирует эти три PyTorch-пакета.
+- ComfyUI и расширение SeedVR2 в `/srv/owl/ComfyUI`, генератор — `/srv/owl/owl_run.py`.
+- ComfyUI слушает только `127.0.0.1:8188`; доступ с компьютера — через SSH-туннель.
+- 7 файлов MiniMax H3, всего 67 353 351 087 байт, модельный commit
+  `54472221d27c695fca9621b0c3ed52f06c4af707`. Он зафиксирован в `download_models.py`.
+
+Smoke-тест на этой конфигурации прошёл: 576×320, 39 кадров, 24 fps, 1,625 секунды
+видео. Реальная заморозка и разморозка проверены: ComfyUI запускается сам,
+модели и готовый ролик сохраняются, повторного скачивания моделей нет.
+Проверенный 1344×768 dashboard-кандидат не публиковался: модель нарушила условие
+пустого экрана. Для сайта сейчас используются проверенные ролики из `knd/media/`.
+
+## Подключение с другого компьютера
+
+Нужны Python 3.12+ и OpenSSH (`ssh`, `scp`). Доступы переносят отдельно через
+защищённое хранилище. **Не создавать новый ключ вместо действующего и не
+коммитить частный ключ или OpenStack-доступ.**
+
+В командах ниже текущий каталог — эта папка `server/`. Файлы доступа расположены
+в домашней папке пользователя за пределами checkout.
+
+```text
+python -m pip install -r requirements-client.txt
+```
+
+Скопировать `target.example.json` в игнорируемый `target.json`. Заполнить
+`server_id`, `ip`, `region`, `project_id` по приватной карточке сервера.
+`ssh_key_path` указывает на существующий частный ключ, например
+`~/.ssh/knd_selectel_ed25519`; `credentials_path` — на существующий OpenRC,
+clouds.yaml или JSON OpenStack-доступа, например `~/.config/knd-private/openrc.sh`.
+Пути с `~` раскрываются относительно домашней папки. Относительные пути
+разрешаются от каталога `target.json`, поэтому можно хранить конфигурацию
+полностью вне репозитория и передавать `--target PATH`.
+
+```text
+python cloud_control.py status
+python cloud_control.py status --target ~/.config/knd-private/target.json
+```
+
+В OpenRC пароль может находиться в соседнем приватном `service_member.txt`
+в формате `username=...` и `password=...`. OpenRC разбирается как данные,
+не исполняется оболочкой. При нескольких облаках в clouds.yaml нужен `--cloud NAME`.
+При отсутствии/неполном target.json программа останавливается **до сети**;
+резервного IP или UUID нет. `status` выводит идентификаторы локально, но не
+печатает значения паролей или токенов. Эти выводы не нужно коммитить.
+
+## Обычная работа: разморозить, выполнить задачу, заморозить
+
+Подставить `<SERVER_IP>` и `<KEY>` из приватной конфигурации. У существующего
+сервера установка уже завершена: bootstrap повторно не запускают.
+
+```text
+python cloud_control.py thaw
+ssh -i <KEY> -o IdentitiesOnly=yes root@<SERVER_IP> nvidia-smi
+ssh -i <KEY> -o IdentitiesOnly=yes root@<SERVER_IP> systemctl is-active owl-comfy.service
+ssh -i <KEY> -o IdentitiesOnly=yes -L 8188:127.0.0.1:8188 root@<SERVER_IP>
+```
+
+Последняя команда открывает туннель. ComfyUI доступен на компьютере по
+`http://127.0.0.1:8188`. Интернет-порт 8188 на сервере не открывать.
+
+Для подготовленного smoke-job (на сервере):
+
+```text
+systemctl start owl-comfy.service
+runuser -u owl -- /srv/owl/ComfyUI/.venv/bin/python /srv/owl/run_when_ready.py /srv/owl/jobs_knd_smoke.json
+```
+
+Для нового сценария скопировать свой JSON задания в `/srv/owl/`, референсы —
+в `/srv/owl/in/`. Образец формата есть в `jobs_knd_dashboard.json`. Запуск
+через `run_when_ready.py` ждёт модели, запускает генератор и сохраняет результат
+в `/srv/owl/logs/dashboard-status.json`; имя файла историческое и используется
+также для других одиночных заданий. Ролики лежат в `/srv/owl/out/<имя_сцены>/`.
+
+Проверять `stage=complete` в status-файле и `ok=true` в последней записи
+`/srv/owl/logs/runs.jsonl`: сам `owl_run.py` может завершиться с кодом 0 после
+ошибки отдельного задания. Подробный лог — `dashboard-generation.log`.
+
+Увеличение видео до 1080p выполняется `owl_upscale.py` через SeedVR2. Расширение
+установлено; его собственные веса не входят в 7 файлов MiniMax H3 и могут
+скачиваться при первом запуске. Увеличенный ролик также требует визуальной проверки.
+
+После получения и проверки результата на компьютере:
+
+```text
+ssh -i <KEY> -o IdentitiesOnly=yes root@<SERVER_IP> systemctl stop owl-comfy.service
+python cloud_control.py freeze
+python cloud_control.py status
+```
+
+Итог должен быть **`SHELVED_OFFLOADED` и `task_state=null`**. Команда freeze
+проверяет нужный проект, UUID и IP, отсутствие локального загрузочного диска,
+пустую очередь, завершённость последнего job и полноту кеша моделей. Незавершённое
+задание или ошибка состояния блокируют заморозку: проверить их, не подменять
+status-файлы фиктивным успехом. `SHUTOFF` и остановка ComfyUI сами по себе не
+подтверждают освобождение вычислительных ресурсов. При таймауте операции сначала
+повторить `status`; не считать заморозку подтверждённой по одному запуску команды.
+
+## Контроль восстановления после разморозки
+
+Этот тест меняет состояние сервера и занимает платное GPU-время; запускать
+при необходимости проверить cold recovery, когда нет активной генерации.
+
+```text
+python verify_recovery.py
+python cloud_control.py status
+```
+
+Тест размораживает сервер, ждёт SSH и ComfyUI, проверяет GPU, размеры кеша,
+сохранённый ролик и пропуск скачивания моделей. В `finally` пытается остановить
+ComfyUI и выполнить guarded freeze даже после ошибки проверки. Локальный receipt
+`validation.local.json` игнорируется Git и может содержать идентификаторы сервера.
+Если в конце заморозка не подтверждена, проверить `status` и довести её до
+`SHELVED_OFFLOADED` вручную; не оставлять сервер без задачи.
+
+## Установка на действительно новый сервер
+
+Новый сервер должен иметь сетевой **загрузочный** диск, доступ по SSH и
+подключённый PRO 6000. Ниже команды для отдельного нового сервера, не для обычного
+возобновления уже настроенного окружения. Путь `server/` заменяется на путь к
+этой папке в checkout, `<KEY>` и `<SERVER_IP>` — приватными значениями.
+
+```text
+ssh -i <KEY> root@<SERVER_IP> mkdir -p /root/knd-setup
+scp -i <KEY> -r server root@<SERVER_IP>:/root/knd-setup/
+ssh -i <KEY> root@<SERVER_IP> python3 /root/knd-setup/server/bootstrap_base.py
+ssh -i <KEY> root@<SERVER_IP> python3 /root/knd-setup/server/bootstrap_driver.py
+```
+
+Если driver-status.local.json сообщил `reboot_required=true`, перезагрузить
+сервер и дождаться восстановления SSH, затем проверить `nvidia-smi`. Далее:
+
+```text
+ssh -i <KEY> root@<SERVER_IP> bash /root/knd-setup/server/bootstrap_runtime.sh
+ssh -i <KEY> root@<SERVER_IP> bash /root/knd-setup/server/start_model_cache.sh
+```
+
+Runtime устанавливает сервис, генераторы, jobs и 4 референса из пакета.
+Сервис `owl-comfy.service` включён в автозапуск. Отдельный oneshot-сервис
+`owl-model-cache.service` скачивает 7 файлов и пропускается, когда существует
+`/srv/owl/logs/models-cached.json`. Скачивание может выполняться параллельно
+установке драйвера; ожидаемые пути и владельцы создаются обоими скриптами.
+
+ComfyUI и SeedVR2 скачиваются из официальных GitHub-репозиториев при первой
+установке; версии их зависимостей могут отличаться от проверенного сервера.
+Bootstrap сохраняет фактические `comfy-commit.txt` и `requirements-installed.txt`
+в `/srv/owl/logs/`. После установки дождаться кеша, выполнить smoke-job,
+проверить ролик и полный freeze/thaw recovery. Модели и `.venv` в Git не добавлять.

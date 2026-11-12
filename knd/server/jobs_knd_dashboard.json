@@ -1,0 +1,13 @@
+{
+  "jobs": [{
+    "name": "KND_dashboard",
+    "mode": "r2v",
+    "seconds": 5,
+    "turbo": true,
+    "steps": 4,
+    "sizes": [[1344, 768]],
+    "seeds": [20261112],
+    "refs": ["owl_ref1_base.png", "owl_ref2_confident.png", "owl_ref5_wing.png", "owl_ref6_face.png"],
+    "prompt": "A single continuous locked-off medium-wide shot in a real modern public administration office. Photoreal cinematic CG eagle-owl labour inspector exactly matching the four reference pictures: grey and white patterned feathers, amber eyes, tall ear tufts, navy uniform jacket with gold buttons, white shirt and dark tie. His feathered wings are his only arms. The owl sits on the LEFT behind a neat dark desk. A large landscape computer monitor is on the RIGHT, facing the camera almost frontally. The complete rectangular monitor screen is clearly visible and remains rigid and stationary. Its screen is an absolutely uniform clean dark navy blue with no content, a blank plate for later compositing real software. No letters, no numbers, no charts, no icons, no pseudo-text. The owl calmly looks at the blank monitor, gently gestures toward it with one wing, then looks toward the viewer and gives a small confident nod. Restrained professional acting, no speaking. Daylight, subtle blue architectural accents, realistic neutral office background. Fixed tripod, 35mm lens, identical framing and focal length throughout. No cuts, no camera movement, no zoom, no close-up. The owl never blocks the monitor. No human hands, no extra arms, no cartoon style, no subtitles, no captions, no logos, no watermark. The final second is still with the owl and full blank screen visible."
+  }]
+}

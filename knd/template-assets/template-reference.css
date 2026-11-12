@@ -1,0 +1,13 @@
+/* Exact PPTX forum canvas. Each page scales uniformly from 1920 x 1080. */
+.forum-canvas { position:relative; width:1920px; height:1080px; overflow:hidden; background:#001657; color:#fff; font-family:Arial, sans-serif; }
+.forum-cover { background:url("cover-bg.png") center / 100% 100% no-repeat; }
+.forum-content { background:url("content-bg.png") center / 100% 100% no-repeat; }
+.forum-closing { background:url("closing-bg.png") center / 100% 100% no-repeat; }
+.forum-cover-title { position:absolute; left:189px; top:434px; width:1640px; font-size:80px; line-height:1.12; font-weight:700; }
+.forum-cover-speaker { position:absolute; left:189px; top:690px; width:826px; font-size:30px; font-weight:700; }
+.forum-cover-role { position:absolute; left:189px; top:763px; width:826px; font-size:30px; }
+.forum-content-title { position:absolute; left:189px; top:55px; width:1154px; font-size:80px; font-weight:700; line-height:1.05; }
+.forum-content-subtitle { position:absolute; left:189px; top:186px; width:1053px; font-size:40px; }
+.forum-closing-title { position:absolute; left:189px; top:493px; width:1640px; font-size:80px; line-height:1.12; font-weight:700; }
+.forum-closing-speaker { position:absolute; left:189px; top:743px; width:826px; font-size:30px; font-weight:700; }
+.forum-closing-role { position:absolute; left:189px; top:824px; width:826px; font-size:30px; }

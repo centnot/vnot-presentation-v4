@@ -203,7 +203,14 @@ function openNotes() {
 }
 
 video.addEventListener('ended', () => {
-  if (current()?.video && step === 0) go(chapter, 1);
+  const section = current();
+  if (!section?.video || step !== 0 || !video.ended || video.dataset.section !== section.id) return;
+  // Keep the decoder's final frame visible. Hiding the video while its final
+  // JPEG loads briefly reveals the first-frame fallback underneath it.
+  step = 1;
+  syncPlayback();
+  drawControls();
+  showControls();
 });
 video.addEventListener('error', () => {
   if (current()?.video && step === 0 && video.dataset.section === current().id) $('#video-error').hidden = false;
@@ -273,7 +280,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261112-qa3');
+  const response = await fetch('content.json?v=20261112-qa4');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
