@@ -21,6 +21,8 @@ fit();
 
 const hasDialog = () => Boolean(document.querySelector('dialog[open]'));
 const current = () => deck?.sections[chapter];
+const screens = section => section?.extra ? ['Категорирование', 'ИИ-риск-профиль'] : section?.autoLandingSeconds ? ['Сложная схема', 'Инструкции и QR'] : [];
+const lastStep = section => screens(section).length ? 2 : 1;
 function canPlay() { return current()?.video && step === 0 && !paused && !black && !hasDialog() && !document.hidden; }
 function syncPlayback() {
   const attempt = ++playbackVersion;
@@ -74,9 +76,18 @@ function drawLanding() {
 
 function drawControls() {
   const section = current();
+  const labels = screens(section);
+  const screenIndex = step === 2 ? 1 : 0;
+  $('#screen-nav').hidden = !labels.length;
+  $('#screen-nav').innerHTML = labels.map((label, index) => `<button data-screen="${index === 0 ? (section.video ? 0 : 1) : 2}" ${index === screenIndex ? 'aria-current="step"' : ''}><span>${index + 1} / ${labels.length}</span>${escapeHTML(label)}</button>`).join('');
+  $('#screen-nav').querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
+    if (Number(button.dataset.screen) === 2 && step === 2) return;
+    go(chapter, Number(button.dataset.screen), Number(button.dataset.screen) === 0);
+  }));
   $('#previous').disabled = chapter < 0;
   $('#next').disabled = chapter === deck.sections.length;
-  $('#position').textContent = chapter < 0 ? 'Начало' : chapter === deck.sections.length ? 'Финал' : `${chapter + 1} / ${deck.sections.length}`;
+  $('#position').textContent = chapter < 0 ? 'Начало' : chapter === deck.sections.length ? 'Финал' : `${chapter + 1} / ${deck.sections.length}${labels.length ? ` · экран ${screenIndex + 1}/${labels.length}` : ''}`;
+  $('#next').title = section && step !== 2 && labels.length ? `Далее: ${labels[1]} · →` : 'Следующий раздел · →';
   $('#pause').hidden = !section || step === 2 || (!section.video && !section.autoLandingSeconds) || (step === 1 && !section.autoLandingSeconds);
   $('#pause').textContent = paused ? '▶' : 'Ⅱ';
   $('#pause').setAttribute('aria-label', paused ? 'Продолжить' : 'Приостановить');
@@ -87,10 +98,11 @@ function drawControls() {
     if (index === chapter) button.setAttribute('aria-current', 'step');
     else button.removeAttribute('aria-current');
   });
-  $('#page-number').textContent = `${String(chapter + 1).padStart(2, '0')} / ${String(deck.sections.length).padStart(2, '0')}`;
+  $('#page-number').textContent = `${String(chapter + 1).padStart(2, '0')} / ${String(deck.sections.length).padStart(2, '0')}${labels.length ? ` · ${screenIndex + 1}/${labels.length}` : ''}`;
 }
 
 function go(index, requestedStep, replay = false) {
+  const wasSecondary = step === 2;
   index = Number.isInteger(index) ? Math.max(-1, Math.min(deck.sections.length, index)) : -1;
   const changed = chapter !== index;
   chapter = index;
@@ -98,6 +110,7 @@ function go(index, requestedStep, replay = false) {
   step = section ? Math.min(section.autoLandingSeconds || section.extra ? 2 : 1, Math.max(0, Number(requestedStep) || (section.video ? 0 : 1))) : 0;
   if (section && !section.video) step = 1;
   if (changed || replay) { elapsed = 0; paused = false; }
+  else if (wasSecondary && step < 2) elapsed = 0;
   video.pause();
   stage.classList.toggle('cover', chapter < 0);
   stage.classList.toggle('closing', chapter === deck.sections.length);
@@ -129,7 +142,7 @@ function go(index, requestedStep, replay = false) {
     $('#media-caption').textContent = section.id === 'ervk' ? 'Расчёт в АСУ КНД  ·  Подписание  ·  Передача в ЕРВК' : '';
   }
   drawControls();
-  const hash = chapter < 0 ? '' : chapter === deck.sections.length ? '#thanks' : `#${section.id}${step ? `/${step}` : ''}`;
+  const hash = chapter < 0 ? '' : chapter === deck.sections.length ? '#thanks' : `#${section.id}${step === 2 ? '/2' : ''}`;
   history.replaceState(null, '', location.pathname + location.search + hash);
   syncPlayback();
   showControls();
@@ -139,17 +152,15 @@ function next() {
   if (chapter < 0) return go(0);
   if (chapter >= deck.sections.length) return;
   const section = current();
-  if (section.video && step === 0) return go(chapter, 1);
   if (section.autoLandingSeconds && step < 2) return go(chapter, 2);
   if (section.extra && step < 2) return go(chapter, 2);
   go(chapter + 1);
 }
 function previous() {
   if (chapter <= -1) return;
-  if (chapter === deck.sections.length) return go(chapter - 1, 1);
+  if (chapter === deck.sections.length) return go(chapter - 1, lastStep(deck.sections[chapter - 1]));
   if (step === 2) return go(chapter, 1);
-  if (step === 1 && current().video) return go(chapter, 0, true);
-  go(chapter - 1, 1);
+  go(chapter - 1, lastStep(deck.sections[chapter - 1]));
 }
 function nav(action) {
   const now = performance.now();
@@ -262,15 +273,15 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json');
+  const response = await fetch('content.json?v=20261112-qa2');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
-  $('#contents-list').innerHTML = `<li><button data-chapter="-1"><span>↖</span>Титульный экран</button></li>` + deck.sections.map((section, index) => `<li><button data-chapter="${index}"><span>${String(index + 1).padStart(2, '0')}</span>${escapeHTML(section.title)}</button></li>`).join('');
+  $('#contents-list').innerHTML = `<li><button data-chapter="-1"><span>↖</span>Титульный экран</button></li>` + deck.sections.map((section, index) => `<li><button data-chapter="${index}"><span>${String(index + 1).padStart(2, '0')}</span>${escapeHTML(section.title)}</button>${screens(section).length ? `<div class="contents-screens">${screens(section).map((label, screenIndex) => `<button data-chapter="${index}" data-step="${screenIndex === 0 ? 0 : 2}"><span>${index + 1}.${screenIndex + 1}</span>${escapeHTML(label)}</button>`).join('')}</div>` : ''}</li>`).join('');
   $('#progress').innerHTML = deck.sections.map((section, index) => `<button data-chapter="${index}" aria-label="${escapeHTML(section.title)}" title="${escapeHTML(section.title)}">${index + 1}</button>`).join('');
   document.querySelectorAll('[data-chapter]').forEach(button => button.addEventListener('click', () => {
     $('#contents-dialog').close();
-    go(Number(button.dataset.chapter), 0, true);
+    go(Number(button.dataset.chapter), Number(button.dataset.step) || 0, true);
   }));
   const [id, initialStep] = location.hash.slice(1).split('/');
   const initialIndex = deck.sections.findIndex(section => section.id === id);
