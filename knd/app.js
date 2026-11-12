@@ -31,6 +31,7 @@ function syncPlayback() {
 }
 
 function drawSummary(section) {
+  $('#summary').classList.toggle('compact', Boolean(section.extra) || section.graphic === 'risk-model');
   $('#summary').innerHTML = `<p class="eyebrow">${escapeHTML(section.graphic ? 'Цифровой инструмент' : 'Практика Роструда')}</p>
     <h2>${escapeHTML(section.tagline)}</h2>
     <ul>${section.bullets.map(text => `<li>${escapeHTML(text)}</li>`).join('')}</ul>
