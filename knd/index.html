@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#001657">
+  <meta name="description" content="Цифровые инструменты контроля и надзора. Медиа-презентация Роструда для Форума контрольных органов — 2026.">
+  <title>Роструд · Форум контрольных органов — 2026</title>
+  <link rel="icon" href="assets/forum-logo.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="stage" class="forum-canvas cover" aria-label="Презентация Роструда">
+    <section id="cover" class="cover-page">
+      <h1 id="deck-title">Основные направления<br>цифровизации контроля и надзора</h1>
+      <p class="cover-organization">Федеральная служба по труду и занятости</p>
+      <button class="start-button" id="start">Начать показ <span aria-hidden="true">→</span></button>
+    </section>
+    <section id="chapter" hidden>
+      <header class="chapter-header">
+        <h1 id="chapter-title"></h1>
+        <p id="chapter-subtitle"></p>
+      </header>
+      <div id="media-layout" class="media-layout">
+        <div class="media-frame">
+          <img id="still" alt="Кадр из ролика с филином">
+          <video id="video" muted playsinline preload="metadata" aria-label="Ролик раздела"></video>
+          <div id="video-error" class="video-error" hidden>
+            <p>Не удалось загрузить ролик</p>
+            <button id="retry">Повторить</button>
+          </div>
+          <div id="graphic" class="graphic" hidden></div>
+          <div id="media-caption" class="media-caption" hidden></div>
+        </div>
+        <aside id="summary" class="summary" aria-label="Ключевые тезисы"></aside>
+      </div>
+      <div id="landing" class="landing" hidden></div>
+      <footer class="chapter-footer">
+        <span>Роструд</span>
+        <nav id="progress" aria-label="Разделы презентации"></nav>
+        <span id="page-number"></span>
+      </footer>
+    </section>
+    <section id="closing" class="closing-page" hidden>
+      <h1>Спасибо за внимание!</h1>
+      <p>Федеральная служба по труду и занятости</p>
+      <button id="restart" class="text-button">Вернуться к началу <span aria-hidden="true">↗</span></button>
+    </section>
+    <p id="loading-error" hidden>Не удалось открыть презентацию. Обновите страницу.</p>
+  </main>
+
+  <nav class="controls" aria-label="Управление показом">
+    <button id="previous" title="Назад · ←" aria-label="Предыдущий экран">←</button>
+    <button id="contents" title="Разделы · T">Разделы</button>
+    <span id="position" class="position" aria-live="polite">Начало</span>
+    <button id="pause" title="Пауза · P" aria-label="Приостановить" hidden>Ⅱ</button>
+    <button id="notes" title="Текст выступления · N">Текст</button>
+    <button id="fullscreen" title="Полный экран · F" aria-label="Полный экран">⛶</button>
+    <button id="next" title="Дальше · →" aria-label="Следующий экран">→</button>
+  </nav>
+
+  <dialog id="contents-dialog" aria-labelledby="contents-title">
+    <div class="dialog-head"><h2 id="contents-title">Разделы выступления</h2><button data-close aria-label="Закрыть">×</button></div>
+    <ol id="contents-list"></ol>
+    <p class="keyboard-help">← → — листать · T — разделы · R — повторить · F — полный экран · B — чёрный экран</p>
+  </dialog>
+  <dialog id="notes-dialog" aria-labelledby="notes-title">
+    <div class="dialog-head"><h2 id="notes-title">Текст выступления</h2><button data-close aria-label="Закрыть">×</button></div>
+    <div id="speaker-content"></div>
+    <a id="download-notes" class="download-link" href="speech.txt" download>Скачать весь текст · TXT</a>
+  </dialog>
+  <div id="black" hidden aria-label="Чёрный экран"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
