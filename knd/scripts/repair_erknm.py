@@ -10,9 +10,9 @@ import subprocess
 import cv2
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
-from project_paths import ROOT, RAW_MEDIA, INTERFACES
+from project_paths import ROOT, INTERFACES, raw_media
 
-SOURCE=RAW_MEDIA/'V3_1344x768_s313_00001__1080p_00001_.mp4'
+SOURCE=raw_media()/'V3_1344x768_s313_00001__1080p_00001_.mp4'
 SHOT=INTERFACES/'erknm_card.jpg'
 OUT=ROOT/'build/video-review/repaired'
 SCALE=1890/1344
@@ -64,7 +64,7 @@ def monitor_plate():
     valid=cv2.warpPerspective(np.full((height,width),255,np.uint8),matrix,(width,height),flags=cv2.INTER_NEAREST)
     x0,y0=np.floor(target[0]).astype(int);x1,y1=np.ceil(target[2]).astype(int)
     plate[y0-2:y1+2,x0-2:x1+2]=[8,9,10]
-    insert=cv2.imread(str(SHOT))
+    insert=cv2.imdecode(np.fromfile(SHOT,np.uint8),cv2.IMREAD_COLOR)  # cv2.imread fails on non-ASCII Windows paths
     ratio=min((x1-x0)/insert.shape[1],(y1-y0)/insert.shape[0])
     insert=cv2.resize(insert,(x1-x0,round(insert.shape[0]*ratio)),interpolation=cv2.INTER_LANCZOS4)
     canvas=np.full((y1-y0,x1-x0,3),255,np.uint8);canvas[:insert.shape[0]]=insert
@@ -81,7 +81,7 @@ def main():
     OUT.mkdir(parents=True,exist_ok=True)
     corrections,parameters,smooth=camera_path()
     plate,geometry=monitor_plate()
-    cv2.imwrite(str(OUT/'erknm-monitor-front.jpg'),plate)
+    cv2.imencode('.jpg',plate)[1].tofile(OUT/'erknm-monitor-front.jpg')
     pipe=subprocess.Popen(['ffmpeg','-v','error','-y','-f','rawvideo','-pix_fmt','bgr24','-s','1890x1080','-r','24','-i','-','-an','-c:v','libx264','-profile:v','high','-level:v','4.1','-crf','17','-preset','fast','-pix_fmt','yuv420p','-movflags','+faststart',str(OUT/'erknm.mp4')],stdin=subprocess.PIPE)
     cap=cv2.VideoCapture(str(SOURCE));index=0
     while True:

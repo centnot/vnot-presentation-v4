@@ -1,5 +1,12 @@
 const $ = selector => document.querySelector(selector);
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+// Keep short prepositions and system abbreviations with the next word on screen.
+const glue = value => String(value ?? '')
+  .replace(/(?<=^|[\s(«])(в|во|и|с|со|к|ко|о|об|от|у|а|на|по|за|из|до|не|для|без|при)\s+/giu, '$1\u00a0')
+  .replace(/(?<=^|[\s(«])(АСУ|ГИС|ТОР|ГАС|МП)\s+/gu, '$1\u00a0')
+  .replace(/(?<=[А-Яа-яЁёA-Za-z])-(?=[А-Яа-яЁёA-Za-z])/g, '\u2011');
+const html = value => escapeHTML(glue(value));
+const draft = location.search.includes('draft');
 const stage = $('#stage');
 const video = $('#video');
 let deck;
@@ -12,16 +19,20 @@ let previousTick = performance.now();
 let controlTimer;
 let lastNav = -1000;
 let playbackVersion = 0;
+const posterCache = [];
 
 function fit() {
-  stage.style.transform = `translate(-50%,-50%) scale(${Math.min(innerWidth / 1920, innerHeight / 1080)})`;
+  // Phones report a zoomed-out innerWidth; the client box is the visible viewport.
+  const width = document.documentElement.clientWidth || innerWidth;
+  const height = document.documentElement.clientHeight || innerHeight;
+  stage.style.transform = `translate(-50%,-50%) scale(${Math.min(width / 1920, height / 1080)})`;
 }
 addEventListener('resize', fit);
 fit();
 
 const hasDialog = () => Boolean(document.querySelector('dialog[open]'));
 const current = () => deck?.sections[chapter];
-const screens = section => section?.extra ? ['Категорирование', 'ИИ-риск-профиль'] : section?.autoLandingSeconds ? ['Сложная схема', 'Инструкции и QR'] : [];
+const screens = section => section?.extra ? ['Категорирование', 'ИИ-риск-профиль'] : section?.autoLandingSeconds ? ['Сложная схема', 'Единая точка входа'] : [];
 const lastStep = section => screens(section).length ? 2 : 1;
 function canPlay() { return current()?.video && step === 0 && !paused && !black && !hasDialog() && !document.hidden; }
 function syncPlayback() {
@@ -35,10 +46,10 @@ function syncPlayback() {
 function drawSummary(section) {
   $('#summary').classList.toggle('compact', Boolean(section.extra) || section.graphic === 'risk-model');
   $('#summary').innerHTML = `<p class="eyebrow">${escapeHTML(section.graphic ? 'Цифровой инструмент' : 'Практика Роструда')}</p>
-    <h2>${escapeHTML(section.tagline)}</h2>
-    <ul>${section.bullets.map(text => `<li>${escapeHTML(text)}</li>`).join('')}</ul>
-    ${section.metrics.length ? `<div class="metrics">${section.metrics.map(metric => `<div class="metric"><b>${escapeHTML(metric.value)}</b><span>${escapeHTML(metric.label)}</span></div>`).join('')}</div>` : ''}
-    ${section.asOf ? `<p class="source-date">${escapeHTML(section.asOf)}</p>` : ''}
+    <h2>${html(section.tagline)}</h2>
+    <ul>${section.bullets.map(text => `<li>${html(text)}</li>`).join('')}</ul>
+    ${section.metrics.length ? `<div class="metrics">${section.metrics.map(metric => `<div class="metric"><b>${escapeHTML(metric.value)}</b><span>${html(metric.label)}</span></div>`).join('')}</div>` : ''}
+    ${section.asOf ? `<p class="source-date">${html(section.asOf)}</p>` : ''}
     ${section.autoLandingSeconds ? '<button id="show-instructions" class="secondary-action">Открыть инструкции ↗</button>' : ''}
     ${section.extra ? '<button id="show-risk-model" class="secondary-action">Как работает риск-модель ↗</button>' : ''}`;
   $('#show-instructions')?.addEventListener('click', () => go(chapter, 2));
@@ -59,6 +70,12 @@ function drawGraphic(section) {
       <div class="flow-row"><b>01</b><span>Восемь внутренних источников АСУ КНД</span></div>
       <div class="flow-row"><b>02</b><span>Логистическая регрессия и скоринг</span></div>
       <div class="flow-row"><b>03</b><span>Оценка риска и влияющие признаки</span></div></div>`;
+  } else if (section.stats) {
+    const stats = section.stats;
+    graphic.innerHTML = `<p class="graphic-kicker">Онлайнинспекция.рф · ${escapeHTML(stats.asOf)}</p>
+      <div class="online-hero"><div><b>${escapeHTML(stats.hero.value)}</b><span>${html(stats.hero.label)}</span><small>${html(stats.hero.detail)}</small></div>
+      <a class="online-link" href="https://онлайнинспекция.рф" target="_blank" rel="noopener noreferrer"><img src="assets/qr-online.svg" alt="QR-код сервиса Онлайнинспекция.рф"><span>Открыть<br>сервис ↗</span></a></div>
+      <div class="online-stats">${stats.tiles.map(tile => `<div class="online-stat"><p>${html(tile.service)}</p><b>${escapeHTML(tile.value)}</b><span>${html(tile.label)}</span></div>`).join('')}</div>`;
   } else {
     graphic.innerHTML = `<p class="graphic-kicker">Сервисы для граждан</p><p class="domain">Онлайнинспекция.рф</p><div class="flow">
       <div class="flow-row"><b>01</b><span>Выбрать вопрос</span></div>
@@ -69,9 +86,13 @@ function drawGraphic(section) {
 }
 
 function drawLanding() {
-  $('#landing').innerHTML = `<div class="landing-intro"><h2>Нужное действие —<br>в понятной инструкции</h2><p>Короткий маршрут, проверенные шаги и материалы, которые всегда доступны по ссылке.</p></div>
-    <div class="instruction-grid">${deck.instructions.map(item => `<a class="instruction-card" href="${escapeHTML(item.url)}" target="_blank" rel="noopener noreferrer"><div><h3>${escapeHTML(item.title)}</h3><p>${escapeHTML(item.description)}</p></div><img src="${escapeHTML(item.qr)}" alt="QR-код: ${escapeHTML(item.title)}"><span class="link-label">Материалы monitoring.gov.ru ↗</span></a>`).join('')}</div>
-    <div class="creation-process"><strong>Как создаём</strong><span>Описываем процесс</span><span>Готовим текст и интерфейс с ИИ</span><span>Проверяем шаги со специалистом</span><span>Публикуем и даём QR-ссылку</span></div>`;
+  const landing = deck.landing;
+  $('#landing').innerHTML = `<div class="landing-browser"><div class="browser-bar"><i></i><i></i><i></i><span>${escapeHTML(landing.title)}</span></div>
+      <div class="browser-view" role="img" aria-label="Страница «${escapeHTML(landing.title)}»" style="background-image:url('${escapeHTML(landing.screenshot)}')"></div></div>
+    <div class="landing-side"><p class="graphic-kicker">${escapeHTML(landing.kicker)}</p><h2>${html(landing.title)}</h2><p>${html(landing.lead)}</p>
+      <div class="guide-grid">${deck.instructions.map(item => `<figure class="guide-card"><img src="${escapeHTML(item.image)}" alt="Руководство «${escapeHTML(item.title)}»"><figcaption><b>${html(item.title)}</b>${html(item.description)}</figcaption></figure>`).join('')}</div>
+      <p class="landing-status">${html(landing.status)}</p></div>
+    <div class="creation-process"><strong>Как создаём</strong>${landing.steps.map(text => `<span>${html(text)}</span>`).join('')}</div>`;
 }
 
 function drawControls() {
@@ -88,7 +109,8 @@ function drawControls() {
   $('#next').disabled = chapter === deck.sections.length;
   $('#position').textContent = chapter < 0 ? 'Начало' : chapter === deck.sections.length ? 'Финал' : `${chapter + 1} / ${deck.sections.length}${labels.length ? ` · экран ${screenIndex + 1}/${labels.length}` : ''}`;
   $('#next').title = section && step !== 2 && labels.length ? `Далее: ${labels[1]} · →` : 'Следующий раздел · →';
-  $('#pause').hidden = !section || step === 2 || (!section.video && !section.autoLandingSeconds) || (step === 1 && !section.autoLandingSeconds);
+  // Keep the slot so the bar width, and the → button position, stay constant.
+  $('#pause').style.visibility = !section || step === 2 || (!section.video && !section.autoLandingSeconds) || (step === 1 && !section.autoLandingSeconds) ? 'hidden' : '';
   $('#pause').textContent = paused ? '▶' : 'Ⅱ';
   $('#pause').setAttribute('aria-label', paused ? 'Продолжить' : 'Приостановить');
   $('#pause').title = `${paused ? 'Продолжить' : 'Пауза'} · P`;
@@ -121,14 +143,14 @@ function go(index, requestedStep, replay = false) {
   if (section) {
     const screen = step === 2 && section.extra ? section.extra : section;
     const isLanding = step === 2 && Boolean(section.autoLandingSeconds);
-    $('#chapter-title').textContent = screen.title;
-    $('#chapter-subtitle').textContent = screen.subtitle;
+    $('#chapter-title').textContent = glue(screen.title);
+    $('#chapter-subtitle').textContent = glue(screen.subtitle);
     $('#media-layout').hidden = isLanding;
     $('#landing').hidden = !isLanding;
     $('#still').hidden = !screen.video;
     video.hidden = !screen.video;
     video.classList.toggle('stopped', step !== 0);
-    $('#still').src = step === 0 ? section.first : section.poster;
+    if (section.video) $('#still').src = step === 0 ? section.first : section.poster;
     $('#still').alt = `Кадр раздела «${section.title}»`;
     if (section.video && (changed || replay || video.dataset.section !== section.id)) {
       video.dataset.section = section.id;
@@ -186,7 +208,7 @@ function toggleFullscreen() {
 function showControls() {
   document.body.classList.remove('controls-hidden');
   clearTimeout(controlTimer);
-  if (document.fullscreenElement) controlTimer = setTimeout(() => document.body.classList.add('controls-hidden'), 3500);
+  controlTimer = setTimeout(() => document.body.classList.add('controls-hidden'), 3500);
 }
 
 function openDialog(dialog) {
@@ -196,10 +218,39 @@ function openDialog(dialog) {
 }
 function openNotes() {
   const section = current();
+  const details = section && draft ? `${section.needs.length ? `<div class="pending"><h4>К подготовке финальной версии</h4><ul>${section.needs.map(item => `<li>${escapeHTML(item)}</li>`).join('')}</ul></div>` : ''}
+    <p class="source-date">Источники: ${section.sources.map(escapeHTML).join('; ')}</p>` : '';
   $('#speaker-content').innerHTML = section ? `<h3>${chapter + 1}. ${escapeHTML(section.title)}</h3><p class="cue">${escapeHTML(section.cue)}</p>${section.notes.map(paragraph => `<p>${escapeHTML(paragraph)}</p>`).join('')}
-    ${section.needs.length ? `<div class="pending"><h4>К подготовке финальной версии</h4><ul>${section.needs.map(item => `<li>${escapeHTML(item)}</li>`).join('')}</ul></div>` : ''}
-    <p class="source-date">Источники: ${section.sources.map(escapeHTML).join('; ')}</p>` : `<h3>${escapeHTML(deck.title)}</h3><p>${escapeHTML(deck.intro)}</p><p class="cue">После титула сразу начинаются ролики. Стрелки листают экраны, клавиша T открывает разделы, N — текст текущего раздела.</p>`;
+    ${section.remarks?.length ? `<div class="remarks"><h4>Для докладчика</h4><ul>${section.remarks.map(item => `<li>${escapeHTML(item)}</li>`).join('')}</ul></div>` : ''}${details}`
+    : chapter === deck.sections.length ? `<h3>Заключение</h3><p>${escapeHTML(deck.outro)}</p>`
+    : `<h3>${escapeHTML(deck.title)}</h3><p>${escapeHTML(deck.intro)}</p><p class="cue">После титула сразу начинаются ролики. Стрелки листают экраны, клавиша T открывает разделы, N — текст текущего раздела.</p>`;
   openDialog($('#notes-dialog'));
+}
+
+function drawSpeaker() {
+  const speaker = deck.speaker || {};
+  for (const page of ['cover', 'closing']) {
+    $(`#${page}-speaker`).textContent = speaker.name || '';
+    $(`#${page}-speaker`).hidden = !speaker.name;
+    $(`#${page}-position`).textContent = speaker.position ? `${speaker.position}, Роструд` : deck.organization;
+  }
+}
+
+function preloadPosters() {
+  // A decoded poster paints at once; otherwise <video> shows its previous poster for a frame after load().
+  if (typeof Image !== 'function') return;
+  for (const section of deck.sections) for (const src of [section.first, section.poster]) {
+    if (!src) continue;
+    const image = new Image();
+    image.src = src;
+    image.decode?.().catch(() => {});
+    posterCache.push(image);
+  }
+}
+
+function fromHash() {
+  const [id, requested] = location.hash.slice(1).split('/');
+  return [id === 'thanks' ? deck.sections.length : deck.sections.findIndex(section => section.id === id), Number(requested)];
 }
 
 video.addEventListener('ended', () => {
@@ -262,6 +313,8 @@ addEventListener('keydown', event => {
 addEventListener('mousemove', showControls);
 addEventListener('touchstart', showControls, {passive:true});
 document.addEventListener('fullscreenchange', showControls);
+// After a mouse click the button keeps focus, and Space/Enter would press it again instead of advancing.
+document.addEventListener('click', event => { if (event.detail) event.target.closest?.('button')?.blur(); });
 document.addEventListener('visibilitychange', () => { previousTick = performance.now(); syncPlayback(); });
 
 function tick(now) {
@@ -280,7 +333,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261112-qa4');
+  const response = await fetch('content.json?v=20261112-r5');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
@@ -290,9 +343,10 @@ try {
     $('#contents-dialog').close();
     go(Number(button.dataset.chapter), Number(button.dataset.step) || 0, true);
   }));
-  const [id, initialStep] = location.hash.slice(1).split('/');
-  const initialIndex = deck.sections.findIndex(section => section.id === id);
-  go(id === 'thanks' ? deck.sections.length : initialIndex, Number(initialStep));
+  drawSpeaker();
+  preloadPosters();
+  go(...fromHash());
+  addEventListener('hashchange', () => { const [index, requested] = fromHash(); go(index, requested, true); });
   requestAnimationFrame(tick);
 } catch (error) {
   $('#loading-error').hidden = false;

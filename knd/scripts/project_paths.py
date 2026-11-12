@@ -6,8 +6,22 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / 'site' if (ROOT / 'site/index.html').is_file() else ROOT
 WORK = ROOT / 'build'
 SOURCES = ROOT / 'source-assets'
-RAW_MEDIA = SOURCES / 'raw-media'
 INTERFACES = SOURCES / 'interfaces'
+PRIVATE_REPO = 'knd-presentation-sources'
+
+def raw_media():
+    """Raw owl generations live in the private repo, not in the public checkout."""
+    override = os.environ.get('KND_PRIVATE_SOURCES')
+    if override:
+        path = Path(override).expanduser().resolve() / 'source-assets/raw-media'
+        if path.is_dir():
+            return path
+        raise FileNotFoundError(f'KND_PRIVATE_SOURCES has no source-assets/raw-media: {path}')
+    for base in [ROOT, ROOT.parent.parent / PRIVATE_REPO / 'knd', ROOT.parent / PRIVATE_REPO / 'knd']:
+        path = base / 'source-assets/raw-media'
+        if any(path.glob('*.mp4')):
+            return path
+    raise FileNotFoundError(f'Raw owl generations missing; clone the private {PRIVATE_REPO} next to this checkout or set KND_PRIVATE_SOURCES')
 
 def previous_media():
     override = os.environ.get('KND_PREVIOUS_MEDIA')

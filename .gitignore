@@ -1,0 +1,23 @@
+# Secrets and local access files never belong in this public repository.
+target*.json
+!**/target.example.json
+*openrc*
+rc.sh
+service_member.txt
+*електел*
+selectel*
+clouds.y*ml
+clouds.json
+*credential*.json
+openstack*.json
+auth*.json
+*.local.json
+validation*.json
+!knd/materials/validation-summary.json
+.env*
+*.pem
+*.key
+id_rsa*
+*ed25519*
+*.bak
+.private/

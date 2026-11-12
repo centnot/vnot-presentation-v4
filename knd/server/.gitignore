@@ -12,3 +12,4 @@ service_member.txt
 *.pem
 *.key
 *ed25519*
+refs/

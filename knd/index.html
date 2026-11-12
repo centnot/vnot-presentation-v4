@@ -7,13 +7,14 @@
   <meta name="description" content="Цифровые инструменты контроля и надзора. Медиа-презентация Роструда для Форума контрольных органов — 2026.">
   <title>Роструд · Форум контрольных органов — 2026</title>
   <link rel="icon" href="assets/forum-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20261112-qa2">
+  <link rel="stylesheet" href="styles.css?v=20261112-r5">
 </head>
 <body>
   <main id="stage" class="forum-canvas cover" aria-label="Презентация Роструда">
     <section id="cover" class="cover-page">
-      <h1 id="deck-title">Основные направления<br>цифровизации контроля и надзора</h1>
-      <p class="cover-organization">Федеральная служба по труду и занятости</p>
+      <h1 id="deck-title">Основные направления цифровизации<br>контроля и надзора</h1>
+      <p class="slide-speaker" id="cover-speaker" hidden></p>
+      <p class="slide-position" id="cover-position">Федеральная служба по труду и занятости</p>
       <button class="start-button" id="start">Начать показ <span aria-hidden="true">→</span></button>
     </section>
     <section id="chapter" hidden>
@@ -44,8 +45,9 @@
     </section>
     <section id="closing" class="closing-page" hidden>
       <h1>Спасибо за внимание!</h1>
-      <p>Федеральная служба по труду и занятости</p>
-      <button id="restart" class="text-button">Вернуться к началу <span aria-hidden="true">↗</span></button>
+      <p class="slide-speaker" id="closing-speaker" hidden></p>
+      <p class="slide-position" id="closing-position">Федеральная служба по труду и занятости</p>
+      <button id="restart" class="text-button">Вернуться к началу <span aria-hidden="true">↖</span></button>
     </section>
     <p id="loading-error" hidden>Не удалось открыть презентацию. Обновите страницу.</p>
   </main>
@@ -54,7 +56,7 @@
     <button id="previous" title="Назад · ←" aria-label="Предыдущий экран">←</button>
     <button id="contents" title="Разделы · T">Разделы</button>
     <span id="position" class="position" aria-live="polite">Начало</span>
-    <button id="pause" title="Пауза · P" aria-label="Приостановить" hidden>Ⅱ</button>
+    <button id="pause" title="Пауза · P" aria-label="Приостановить" style="visibility:hidden">Ⅱ</button>
     <button id="notes" title="Текст выступления · N">Текст</button>
     <button id="fullscreen" title="Полный экран · F" aria-label="Полный экран">⛶</button>
     <button id="next" title="Дальше · →" aria-label="Следующий экран">→</button>
@@ -71,6 +73,6 @@
     <a id="download-notes" class="download-link" href="speech.txt" download>Скачать весь текст · TXT</a>
   </dialog>
   <div id="black" hidden aria-label="Чёрный экран"></div>
-  <script type="module" src="app.js?v=20261112-qa4"></script>
+  <script type="module" src="app.js?v=20261112-r5"></script>
 </body>
 </html>

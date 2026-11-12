@@ -19,3 +19,6 @@ server/*.local.json
 id_ed25519*
 id_rsa*
 models/
+# Owl production files: private repo centnot/knd-presentation-sources
+source-assets/raw-media/
+server/refs/

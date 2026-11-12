@@ -3,6 +3,15 @@
 set -euo pipefail
 BASE=/srv/owl
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+# Owl references are private: copy knd/server/refs from knd-presentation-sources.
+REFS_DIR=${KND_REFS_DIR:-$SCRIPT_DIR/refs}
+shopt -s nullglob
+REFS=("$REFS_DIR"/*.png)
+shopt -u nullglob
+if [ ${#REFS[@]} -eq 0 ]; then
+  echo "No owl references in $REFS_DIR. Copy knd/server/refs from the private knd-presentation-sources repo or set KND_REFS_DIR." >&2
+  exit 1
+fi
 DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential
 if ! id owl >/dev/null 2>&1; then
   useradd --system --create-home --home-dir "$BASE" --shell /usr/sbin/nologin owl
@@ -71,7 +80,7 @@ done
 for job in jobs_knd_smoke.json jobs_knd_dashboard.json; do
   install -o owl -g owl -m 644 "$SCRIPT_DIR/$job" "$BASE/$job"
 done
-for ref in "$SCRIPT_DIR"/refs/*.png; do
+for ref in "${REFS[@]}"; do
   install -o owl -g owl -m 644 "$ref" "$BASE/in/$(basename "$ref")"
 done
 echo 'Runtime installed. ComfyUI listens only on 127.0.0.1:8188.'

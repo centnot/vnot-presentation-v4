@@ -12,11 +12,11 @@ import cv2
 import numpy as np
 from PIL import Image
 from scipy.ndimage import gaussian_filter1d
-from project_paths import ROOT, RAW_MEDIA, INTERFACES, previous_media
+from project_paths import ROOT, INTERFACES, previous_media, raw_media
 
 OUT = ROOT / 'build/video-review/repaired'
 OUT.mkdir(parents=True, exist_ok=True)
-HD3 = HD2 = RAW_MEDIA
+HD3 = HD2 = raw_media()
 SHOTS = INTERFACES
 SCALE = 1890 / 1344
 
@@ -99,7 +99,7 @@ def closeup(name, source, cut, plate_index, image_path, quad, trim=0, ink=False,
         plate=composite(plate,insert[:,mid:],quad[1],ink=True)
     else:
         plate=composite(plate,insert,quad,occlude=occlude,notch=notch)
-    cv2.imwrite(str(OUT/f'{name}-plate.jpg'),plate)
+    cv2.imencode('.jpg',plate)[1].tofile(OUT/f'{name}-plate.jpg')  # cv2.imwrite fails on non-ASCII Windows paths
     def frames():
         cap=cv2.VideoCapture(str(source)); i=0
         while True:
