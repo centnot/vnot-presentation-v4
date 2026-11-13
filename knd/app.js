@@ -35,7 +35,7 @@ fit();
 
 const hasDialog = () => Boolean(document.querySelector('dialog[open]'));
 const current = () => deck?.sections[chapter];
-const screens = section => section?.extra ? ['Категорирование', 'ИИ-риск-профиль'] : section?.autoLandingSeconds ? ['Сложная схема', 'Единая точка входа'] : [];
+const screens = section => section?.extra ? section.extra.screens : section?.autoLandingSeconds ? ['Сложная схема', 'Единая точка входа'] : [];
 const lastStep = section => screens(section).length ? 2 : 1;
 function canPlay() { return current()?.video && step === 0 && !paused && !black && !hasDialog() && !document.hidden; }
 function syncPlayback() {
@@ -47,23 +47,26 @@ function syncPlayback() {
 }
 
 function drawSummary(section) {
-  $('#summary').classList.toggle('compact', Boolean(section.extra) || section.graphic === 'risk-model' || section.metrics.length > 2);
+  $('#summary').classList.toggle('compact', Boolean(section.extra) || ['risk-model', 'image'].includes(section.graphic) || section.metrics.length > 2);
   $('#summary').innerHTML = `<p class="eyebrow">${escapeHTML(section.graphic ? 'Цифровой инструмент' : 'Практика Роструда')}</p>
     <h2>${html(section.tagline)}</h2>
     <ul>${section.bullets.map(text => `<li>${html(text)}</li>`).join('')}</ul>
     ${section.metrics.length ? `<div class="metrics">${section.metrics.map(metric => `<div class="metric"><b>${escapeHTML(metric.value)}</b><span>${html(metric.label)}</span></div>`).join('')}</div>` : ''}
     ${section.asOf ? `<p class="source-date">${html(section.asOf)}</p>` : ''}
     ${section.autoLandingSeconds ? '<button id="show-instructions" class="secondary-action">Открыть инструкции ↗</button>' : ''}
-    ${section.extra ? '<button id="show-risk-model" class="secondary-action">Как работает риск-модель ↗</button>' : ''}`;
+    ${section.extra ? `<button id="show-extra" class="secondary-action">${escapeHTML(section.extra.button)}</button>` : ''}`;
   $('#show-instructions')?.addEventListener('click', () => go(chapter, 2));
-  $('#show-risk-model')?.addEventListener('click', () => go(chapter, 2));
+  $('#show-extra')?.addEventListener('click', () => go(chapter, 2));
 }
 
 function drawGraphic(section) {
   const graphic = $('#graphic');
   graphic.hidden = !section.graphic;
   if (!section.graphic) { graphic.innerHTML = ''; return; }
-  if (section.graphic === 'gasu') {
+  graphic.classList.toggle('light', section.graphic === 'image');
+  if (section.graphic === 'image') {
+    graphic.innerHTML = `<p class="graphic-kicker">${html(section.kicker)}</p><img class="graphic-image" src="${escapeHTML(section.image)}" alt="${escapeHTML(section.alt)}">`;
+  } else if (section.graphic === 'gasu') {
     graphic.innerHTML = `<p class="graphic-kicker">ГАС «Управление»</p><h2>Результаты работы<br>на одном экране</h2><div class="flow">
       <div class="flow-row"><b>01</b><span>Показатели деятельности</span></div>
       <div class="flow-row"><b>02</b><span>Оценка результатов</span></div>
@@ -339,7 +342,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261113-r7');
+  const response = await fetch('content.json?v=20261113-r8');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
