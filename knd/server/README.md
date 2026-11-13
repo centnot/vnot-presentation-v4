@@ -88,7 +88,7 @@ runuser -u owl -- /srv/owl/ComfyUI/.venv/bin/python /srv/owl/run_when_ready.py /
 ```
 
 Для нового сценария скопировать свой JSON задания в `/srv/owl/`, референсы —
-в `/srv/owl/in/`. Образец формата есть в `jobs_knd_dashboard.json`. Запуск
+в `/srv/owl/in/`. Образец формата — `knd/server/jobs_knd_dashboard.json` в приватном репозитории. Запуск
 через `run_when_ready.py` ждёт модели, запускает генератор и сохраняет результат
 в `/srv/owl/logs/dashboard-status.json`; имя файла историческое и используется
 также для других одиночных заданий. Ролики лежат в `/srv/owl/out/<имя_сцены>/`.
@@ -174,8 +174,8 @@ ssh -i <KEY> root@<SERVER_IP> bash /root/knd-setup/server/start_model_cache.sh
 
 Runtime устанавливает сервис, генераторы, jobs и референсы из `refs/`.
 Референсов филина в публичном репозитории нет: перед копированием пакета на сервер
-положить в `server/refs/` четыре PNG из `knd/server/refs` приватного
-`centnot/knd-presentation-sources` или задать `KND_REFS_DIR`. Без них скрипт
+положить в `server/refs/` четыре PNG, а в `server/` — задания `jobs_*.json` из `knd/server` приватного
+`centnot/knd-presentation-sources` или задать `KND_REFS_DIR` и `KND_JOBS_DIR`. Без них скрипт
 останавливается до начала установки.
 Сервис `owl-comfy.service` включён в автозапуск. Отдельный oneshot-сервис
 `owl-model-cache.service` скачивает 7 файлов и пропускается, когда существует

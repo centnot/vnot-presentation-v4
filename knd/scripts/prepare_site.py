@@ -51,14 +51,13 @@ def prepare():
             segno.make(instruction['url'], error='m', micro=False).save(SITE / instruction['qr'], scale=8, dark='#001657', light='#ffffff', border=4)
     # Punycode: a Cyrillic URL is encoded in Kanji mode and some scanners return garbage.
     segno.make('https://' + 'онлайнинспекция.рф'.encode('idna').decode(), error='m', micro=False).save(SITE / 'assets/qr-online.svg', scale=8, dark='#001657', light='#ffffff', border=4)
-    lines = [content['title'], content['organization'], 'Рабочая версия к форуму, 12 ноября 2026 года', '', content['intro'], '']
+    # Public download: only what is said and shown. Remarks, needs and sources stay in content.json (?draft).
+    lines = [content['title'], content['organization'], 'Текст выступления', '', content['intro'], '']
     pending = ['МАТЕРИАЛЫ ДЛЯ ФИНАЛЬНОЙ ВЕРСИИ', '']
     if content.get('needs'):
         pending += ['Вся презентация', *['- ' + value for value in content['needs']], '']
     for index, section in enumerate(content['sections'], 1):
         lines += [f"{index}. {section['title']}", f"ПОКАЗ: {section['cue']}", '', *section['notes'], '']
-        if section.get('remarks'):
-            lines += ['ДЛЯ ДОКЛАДЧИКА:', *['- ' + value for value in section['remarks']], '']
         if section['needs']:
             pending += [f"{index}. {section['title']}", *['- ' + value for value in section['needs']], '']
         lines += ['-' * 65, '']

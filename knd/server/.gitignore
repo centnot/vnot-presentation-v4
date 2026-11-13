@@ -13,3 +13,4 @@ service_member.txt
 *.key
 *ed25519*
 refs/
+jobs_*.json

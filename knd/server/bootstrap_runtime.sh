@@ -12,6 +12,14 @@ if [ ${#REFS[@]} -eq 0 ]; then
   echo "No owl references in $REFS_DIR. Copy knd/server/refs from the private knd-presentation-sources repo or set KND_REFS_DIR." >&2
   exit 1
 fi
+# Generation jobs (prompts) are private too: knd/server/jobs_*.json in knd-presentation-sources.
+JOBS_DIR=${KND_JOBS_DIR:-$SCRIPT_DIR}
+for job in jobs_knd_smoke.json jobs_knd_dashboard.json; do
+  if [ ! -f "$JOBS_DIR/$job" ]; then
+    echo "Missing $JOBS_DIR/$job. Copy knd/server/jobs_*.json from the private knd-presentation-sources repo or set KND_JOBS_DIR." >&2
+    exit 1
+  fi
+done
 DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential
 if ! id owl >/dev/null 2>&1; then
   useradd --system --create-home --home-dir "$BASE" --shell /usr/sbin/nologin owl
@@ -78,7 +86,7 @@ for script in owl_run.py owl_upscale.py run_when_ready.py; do
   install -o owl -g owl -m 644 "$SCRIPT_DIR/$script" "$BASE/$script"
 done
 for job in jobs_knd_smoke.json jobs_knd_dashboard.json; do
-  install -o owl -g owl -m 644 "$SCRIPT_DIR/$job" "$BASE/$job"
+  install -o owl -g owl -m 644 "$JOBS_DIR/$job" "$BASE/$job"
 done
 for ref in "${REFS[@]}"; do
   install -o owl -g owl -m 644 "$ref" "$BASE/in/$(basename "$ref")"

@@ -21,3 +21,15 @@ id_rsa*
 *ed25519*
 *.bak
 .private/
+*creds*.json
+*service*account*.json
+*.p12
+*.pfx
+*.ppk
+.netrc
+*token*.txt
+*secret*
+*password*
+*пароль*
+*доступ*
+*ЕЛЕКТЕЛ*

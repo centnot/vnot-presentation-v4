@@ -4,7 +4,10 @@ const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&
 const glue = value => String(value ?? '')
   .replace(/(?<=^|[\s(«])(в|во|и|с|со|к|ко|о|об|от|у|а|на|по|за|из|до|не|для|без|при)\s+/giu, '$1\u00a0')
   .replace(/(?<=^|[\s(«])(АСУ|ГИС|ТОР|ГАС|МП)\s+/gu, '$1\u00a0')
-  .replace(/(?<=[А-Яа-яЁёA-Za-z])-(?=[А-Яа-яЁёA-Za-z])/g, '\u2011');
+  .replace(/(?<=[А-Яа-яЁёA-Za-z])-(?=[А-Яа-яЁёA-Za-z])/g, '\u2011')
+  .replace(/(?<=\d) (?=\d{3}(?!\d))/g, '\u00a0')
+  // Keep a short last word with the previous one, but leave two-word labels breakable.
+  .replace(/ (?=[^ ]{1,10}$)/u, (space, offset, text) => text.split(' ').length > 2 ? '\u00a0' : space);
 const html = value => escapeHTML(glue(value));
 const draft = location.search.includes('draft');
 const stage = $('#stage');
@@ -44,7 +47,7 @@ function syncPlayback() {
 }
 
 function drawSummary(section) {
-  $('#summary').classList.toggle('compact', Boolean(section.extra) || section.graphic === 'risk-model');
+  $('#summary').classList.toggle('compact', Boolean(section.extra) || section.graphic === 'risk-model' || section.metrics.length > 2);
   $('#summary').innerHTML = `<p class="eyebrow">${escapeHTML(section.graphic ? 'Цифровой инструмент' : 'Практика Роструда')}</p>
     <h2>${html(section.tagline)}</h2>
     <ul>${section.bullets.map(text => `<li>${html(text)}</li>`).join('')}</ul>
@@ -220,9 +223,10 @@ function openNotes() {
   const section = current();
   const details = section && draft ? `${section.needs.length ? `<div class="pending"><h4>К подготовке финальной версии</h4><ul>${section.needs.map(item => `<li>${escapeHTML(item)}</li>`).join('')}</ul></div>` : ''}
     <p class="source-date">Источники: ${section.sources.map(escapeHTML).join('; ')}</p>` : '';
-  $('#speaker-content').innerHTML = section ? `<h3>${chapter + 1}. ${escapeHTML(section.title)}</h3><p class="cue">${escapeHTML(section.cue)}</p>${section.notes.map(paragraph => `<p>${escapeHTML(paragraph)}</p>`).join('')}
-    ${section.remarks?.length ? `<div class="remarks"><h4>Для докладчика</h4><ul>${section.remarks.map(item => `<li>${escapeHTML(item)}</li>`).join('')}</ul></div>` : ''}${details}`
-    : chapter === deck.sections.length ? `<h3>Заключение</h3><p>${escapeHTML(deck.outro)}</p>`
+  const remarks = section?.remarks?.length && draft ? `<div class="remarks"><h4>Для докладчика</h4><ul>${section.remarks.map(item => `<li>${html(item)}</li>`).join('')}</ul></div>` : '';
+  $('#speaker-content').innerHTML = section ? `<h3>${chapter + 1}. ${html(section.title)}</h3><p class="cue">${html(section.cue)}</p>${section.notes.map(paragraph => `<p>${html(paragraph)}</p>`).join('')}
+    ${remarks}${details}`
+    : chapter === deck.sections.length ? `<h3>Заключение</h3><p>${html(deck.outro)}</p>`
     : `<h3>${escapeHTML(deck.title)}</h3><p>${escapeHTML(deck.intro)}</p><p class="cue">После титула сразу начинаются ролики. Стрелки листают экраны, клавиша T открывает разделы, N — текст текущего раздела.</p>`;
   openDialog($('#notes-dialog'));
 }
@@ -232,7 +236,8 @@ function drawSpeaker() {
   for (const page of ['cover', 'closing']) {
     $(`#${page}-speaker`).textContent = speaker.name || '';
     $(`#${page}-speaker`).hidden = !speaker.name;
-    $(`#${page}-position`).textContent = speaker.position ? `${speaker.position}, Роструд` : deck.organization;
+    const position = speaker.position && !/Роструд/.test(speaker.position) ? `${speaker.position}, Роструд` : speaker.position;
+    $(`#${page}-position`).textContent = position || deck.organization;
   }
 }
 
@@ -314,7 +319,8 @@ addEventListener('mousemove', showControls);
 addEventListener('touchstart', showControls, {passive:true});
 document.addEventListener('fullscreenchange', showControls);
 // After a mouse click the button keeps focus, and Space/Enter would press it again instead of advancing.
-document.addEventListener('click', event => { if (event.detail) event.target.closest?.('button')?.blur(); });
+// Capture phase: blur before a dialog opens, so closing it does not return focus to the button.
+document.addEventListener('click', event => { if (event.detail) event.target.closest?.('button')?.blur(); }, true);
 document.addEventListener('visibilitychange', () => { previousTick = performance.now(); syncPlayback(); });
 
 function tick(now) {
@@ -326,14 +332,14 @@ function tick(now) {
     if (step === 1 || (!video.paused && video.readyState >= 2)) elapsed += delta;
     const button = $('#show-instructions');
     const secondsLeft = Math.max(0, Math.ceil(section.autoLandingSeconds - elapsed / 1000));
-    if (button) button.textContent = `Открыть инструкции · через ${secondsLeft} с ↗`;
+    if (button) button.textContent = glue(`Инструкции через ${secondsLeft} с ↗`);
     if (elapsed >= section.autoLandingSeconds * 1000) go(chapter, 2);
   }
   requestAnimationFrame(tick);
 }
 
 try {
-  const response = await fetch('content.json?v=20261112-r5');
+  const response = await fetch('content.json?v=20261113-r6');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
