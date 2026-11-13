@@ -184,21 +184,21 @@ def hold_clean_book():
     write(OUT/'ervk.mp4',frames())
 
 def monitoring():
-    source=HD3/'V4_1344x768_s406_00001__1080p_00001_.mp4'
-    insert=load_image(SHOTS/'scheme.jpg')
+    # 13.11.2026 take: the owl is clearly frightened by the scheme (KND_fear s4101, SeedVR2 1080p).
+    source=HD3/'KND_fear_1344x768_s4101_00001__1080p_00001_.mp4'
+    quad=[[61.9,131.6],[686.3,119.4],[686.1,462.2],[61.9,476.0]]
+    scheme=load_image(SHOTS/'scheme.jpg')
+    # The screen is wider than the scheme: fit it by height on a white slide instead of stretching.
+    width=round(scheme.shape[0]*(quad[1][0]-quad[0][0])/(quad[3][1]-quad[0][1]))
+    insert=np.full((scheme.shape[0],width,3),255,np.uint8)
+    left=(width-scheme.shape[1])//2
+    insert[:,left:left+scheme.shape[1]]=scheme
     def frames():
         cap=cv2.VideoCapture(str(source))
         while True:
             ok,f=cap.read()
             if not ok:break
-            # Remove the generated pseudo-label outside the projected screen.
-            x0,y0,x1,y1=np.int32(np.array([660,458,792,520])*SCALE)
-            patch=f[y0:y1,x0:x1].copy()
-            mask=np.zeros(patch.shape[:2],np.uint8)
-            poly=np.float32([[684,478],[775,480],[775,503],[684,501]])*SCALE-[x0,y0]
-            cv2.fillConvexPoly(mask,np.int32(poly),255)
-            f[y0:y1,x0:x1]=cv2.inpaint(patch,mask,5,cv2.INPAINT_TELEA)
-            yield composite(f,insert,[[40,27],[699,79],[695,478],[32,478]])
+            yield composite(f,insert,quad)
         cap.release()
     write(OUT/'monitoring.mp4',frames())
 
