@@ -47,7 +47,8 @@ function syncPlayback() {
 }
 
 function drawSummary(section) {
-  $('#summary').classList.toggle('compact', Boolean(section.extra) || ['risk-model', 'image'].includes(section.graphic) || section.metrics.length > 2);
+  $('#summary').classList.toggle('compact', Boolean(section.extra) || ['risk-model', 'image', 'route'].includes(section.graphic) || section.metrics.length > 2);
+  $('#summary').classList.toggle('route', section.graphic === 'route');
   $('#summary').innerHTML = `<p class="eyebrow">${escapeHTML(section.graphic ? 'Цифровой инструмент' : 'Практика Роструда')}</p>
     <h2>${html(section.tagline)}</h2>
     <ul>${section.bullets.map(text => `<li>${html(text)}</li>`).join('')}</ul>
@@ -63,8 +64,11 @@ function drawGraphic(section) {
   const graphic = $('#graphic');
   graphic.hidden = !section.graphic;
   if (!section.graphic) { graphic.innerHTML = ''; return; }
-  graphic.classList.toggle('light', section.graphic === 'image');
-  if (section.graphic === 'image') {
+  graphic.classList.toggle('light', ['image', 'route'].includes(section.graphic));
+  if (section.graphic === 'route') {
+    graphic.innerHTML = `<p class="graphic-kicker">${html(section.kicker)}</p><p class="route-q"></p><div class="route-map" role="img" aria-label="${escapeHTML(section.alt)}">${$('#route-map').innerHTML}</div>`;
+    startRoutes(section);
+  } else if (section.graphic === 'image') {
     graphic.innerHTML = `<p class="graphic-kicker">${html(section.kicker)}</p><img class="graphic-image" src="${escapeHTML(section.image)}" alt="${escapeHTML(section.alt)}">`;
   } else if (section.graphic === 'gasu') {
     graphic.innerHTML = `<p class="graphic-kicker">ГАС «Управление»</p><h2>Результаты работы<br>на одном экране</h2><div class="flow">
@@ -91,6 +95,60 @@ function drawGraphic(section) {
   }
 }
 
+// AI assistant route diagram: cycles through example questions like the assistant's own site.
+const LINE_Y = {1: 70, 2: 165, 3: 265, 4: 360};
+const reduceMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let routeTimer;
+function startRoutes(section) {
+  clearTimeout(routeTimer);
+  let index = 0;
+  drawRoute(section.routes[index++]);
+  const next = () => {
+    if (current()?.extra !== section || step !== 2) return;
+    if (!paused && !black && !hasDialog() && !document.hidden) drawRoute(section.routes[index++ % section.routes.length]);
+    routeTimer = setTimeout(next, (section.routeSeconds || 8) * 1000);
+  };
+  routeTimer = setTimeout(next, (section.routeSeconds || 8) * 1000);
+}
+function drawRoute(route) {
+  const svg = $('#graphic').querySelector('.route-svg');
+  if (!svg) return;
+  $('#graphic').querySelector('.route-q').textContent = glue(`«${route.q}»`);
+  svg.classList.add('focus');
+  svg.querySelectorAll('.grp').forEach(group => group.classList.toggle('off', group.dataset.g !== 'trunk' && !route.lines.includes(Number(group.dataset.g))));
+  $('#summary .eyebrow').textContent = `Маршрут · ${route.lines.length > 1 ? 'линии' : 'линия'} ${route.lines.join(' и ')}`;
+  $('#summary ul').innerHTML = route.steps.map(text => `<li>${html(text)}</li>`).join('');
+  const host = svg.querySelector('.trains');
+  host.innerHTML = '';
+  if (!reduceMotion) route.lines.forEach((line, n) => runTrain(host, `M48 215 H250 V${LINE_Y[line]} H760 V215 H956`, n * 180, 3000));
+}
+function runTrain(host, d, delay, duration) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const path = document.createElementNS(ns, 'path');
+  path.setAttribute('d', d);
+  path.setAttribute('fill', 'none');
+  const dot = document.createElementNS(ns, 'circle');
+  dot.setAttribute('r', '9');
+  dot.setAttribute('class', 'train');
+  dot.style.opacity = '0';
+  host.append(path, dot);
+  const length = path.getTotalLength();
+  const ease = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+  let start = null;
+  const frame = time => {
+    if (!dot.isConnected) return;
+    start ??= time + delay;
+    const t = Math.min(1, Math.max(0, (time - start) / duration));
+    const point = path.getPointAtLength(length * ease(t));
+    dot.setAttribute('cx', point.x);
+    dot.setAttribute('cy', point.y);
+    dot.style.opacity = time < start ? '0' : '1';
+    if (t < 1) requestAnimationFrame(frame);
+    else setTimeout(() => { dot.style.opacity = '0'; }, 900);
+  };
+  requestAnimationFrame(frame);
+}
+
 function drawLanding() {
   const landing = deck.landing;
   $('#landing').innerHTML = `<div class="landing-browser"><div class="browser-bar"><i></i><i></i><i></i><span>${escapeHTML(landing.title)}</span></div>
@@ -98,7 +156,7 @@ function drawLanding() {
     <div class="landing-side"><p class="graphic-kicker">${escapeHTML(landing.kicker)}</p><h2>${html(landing.title)}</h2><p>${html(landing.lead)}</p>
       <div class="guide-grid">${deck.instructions.map(item => `<figure class="guide-card"><img src="${escapeHTML(item.image)}" alt="Руководство «${escapeHTML(item.title)}»"><figcaption><b>${html(item.title)}</b>${html(item.description)}</figcaption></figure>`).join('')}</div>
       <p class="landing-status">${html(landing.status)}</p></div>
-    <div class="creation-process"><strong>Как создаём</strong>${landing.steps.map(text => `<span>${html(text)}</span>`).join('')}</div>`;
+    <div class="creation-process"><strong>${html(landing.stepsTitle || 'Как создаём')}</strong>${landing.steps.map(text => `<span>${html(text)}</span>`).join('')}</div>`;
 }
 
 function drawControls() {
@@ -130,6 +188,7 @@ function drawControls() {
 }
 
 function go(index, requestedStep, replay = false) {
+  clearTimeout(routeTimer);
   const wasSecondary = step === 2;
   index = Number.isInteger(index) ? Math.max(-1, Math.min(deck.sections.length, index)) : -1;
   const changed = chapter !== index;
@@ -342,7 +401,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261113-r8');
+  const response = await fetch('content.json?v=20261113-r9');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();

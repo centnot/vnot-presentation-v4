@@ -7,7 +7,7 @@
   <meta name="description" content="Цифровые инструменты контроля и надзора. Медиа-презентация Роструда для Форума контрольных органов — 2026.">
   <title>Роструд · Форум контрольных органов — 2026</title>
   <link rel="icon" href="assets/forum-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20261113-r8">
+  <link rel="stylesheet" href="styles.css?v=20261113-r9">
 </head>
 <body>
   <main id="stage" class="forum-canvas cover" aria-label="Презентация Роструда">
@@ -73,6 +73,68 @@
     <a id="download-notes" class="download-link" href="speech.txt" download>Скачать весь текст · TXT</a>
   </dialog>
   <div id="black" hidden aria-label="Чёрный экран"></div>
-  <script type="module" src="app.js?v=20261113-r8"></script>
+  <!-- Route diagram of the AI assistant, from its technical site (24.09.2026). -->
+  <template id="route-map">
+    <svg class="route-svg" viewBox="0 0 1000 420" role="img" aria-label="Схема маршрута запроса: вопрос, вход, роутер, четыре линии источников, синтез, ответ, оценка">
+    <g class="grp" data-g="trunk">
+    <path class="ln st-trunk" d="M48 215 H236"/>
+    <path class="ln st-trunk" d="M774 215 H956"/>
+    <rect x="43" y="197" width="10" height="36" rx="5" class="fl-trunk"/>
+    <rect x="951" y="197" width="10" height="36" rx="5" class="fl-trunk"/>
+    <circle class="stn st-trunk" cx="146" cy="215" r="7"/>
+    <circle class="stn st-trunk" cx="866" cy="215" r="7"/>
+    <text class="lbl-b" x="40" y="186">Вопрос</text>
+    <text class="lbl" x="146" y="250" text-anchor="middle">Вход · SSO и регион</text>
+    <text class="lbl" x="866" y="250" text-anchor="middle">Ответ со ссылками</text>
+    <text class="lbl-b" x="962" y="186" text-anchor="end">Оценка</text>
+    </g>
+    <g class="grp" data-g="1">
+    <path class="ln st-l1" d="M264 70 H746"/>
+    <rect x="278" y="57" width="118" height="26" rx="13" class="fl-l1"/>
+    <text class="pill-t" x="337" y="74.5" text-anchor="middle">1 · НПА</text>
+    <circle class="stn st-l1" cx="450" cy="70" r="7"/><circle class="stn st-l1" cx="575" cy="70" r="7"/><circle class="stn st-l1" cx="690" cy="70" r="7"/>
+    <text class="lbl" x="450" y="52" text-anchor="middle">Статья и документ</text>
+    <text class="lbl" x="575" y="52" text-anchor="middle">Гибридный поиск</text>
+    <text class="lbl" x="690" y="52" text-anchor="middle">LLM‑фильтр</text>
+    </g>
+    <g class="grp" data-g="2">
+    <path class="ln st-l2" d="M264 165 H746"/>
+    <rect x="278" y="152" width="118" height="26" rx="13" class="fl-l2"/>
+    <text class="pill-t" x="337" y="169.5" text-anchor="middle">2 · Служебки</text>
+    <circle class="stn st-l2" cx="450" cy="165" r="7"/><circle class="stn st-l2" cx="575" cy="165" r="7"/><circle class="stn st-l2" cx="690" cy="165" r="7"/>
+    <text class="lbl" x="450" y="147" text-anchor="middle">Гибридный поиск</text>
+    <text class="lbl" x="575" y="147" text-anchor="middle">LLM‑фильтр</text>
+    <text class="lbl" x="690" y="147" text-anchor="middle">Дата и автор</text>
+    </g>
+    <g class="grp" data-g="3">
+    <path class="ln st-l3" d="M264 265 H746"/>
+    <rect x="278" y="252" width="118" height="26" rx="13" class="fl-l3"/>
+    <text class="pill-t" x="337" y="269.5" text-anchor="middle">3 · Руководства</text>
+    <circle class="stn st-l3" cx="450" cy="265" r="7"/><circle class="stn st-l3" cx="575" cy="265" r="7"/><circle class="stn st-l3" cx="690" cy="265" r="7"/>
+    <text class="lbl" x="450" y="247" text-anchor="middle">Гибридный поиск</text>
+    <text class="lbl" x="575" y="247" text-anchor="middle">LLM‑фильтр</text>
+    <text class="lbl" x="690" y="247" text-anchor="middle">Шаги в системе</text>
+    </g>
+    <g class="grp" data-g="4">
+    <path class="ln st-l4" d="M264 360 H746"/>
+    <rect x="278" y="347" width="118" height="26" rx="13" class="fl-l4"/>
+    <text class="pill-t" x="337" y="364.5" text-anchor="middle">4 · База АСУ КНД</text>
+    <circle class="stn st-l4" cx="450" cy="360" r="7"/><circle class="stn st-l4" cx="575" cy="360" r="7"/><circle class="stn st-l4" cx="690" cy="360" r="7"/>
+    <text class="lbl" x="450" y="342" text-anchor="middle">Выбор показателя</text>
+    <text class="lbl" x="575" y="342" text-anchor="middle">SQL‑шаблон</text>
+    <text class="lbl" x="690" y="342" text-anchor="middle">Регион из токена</text>
+    </g>
+    <g class="grp" data-g="trunk">
+    <rect class="cap-shape" x="236" y="48" width="28" height="334" rx="14"/>
+    <rect class="cap-shape" x="746" y="48" width="28" height="334" rx="14"/>
+    <text class="lbl-b" x="250" y="30" text-anchor="middle">Роутер</text>
+    <text class="lbl-s" x="250" y="406" text-anchor="middle">до 6 пересадок</text>
+    <text class="lbl-b" x="760" y="30" text-anchor="middle">Синтез</text>
+    <text class="lbl-s" x="760" y="406" text-anchor="middle">только по источникам</text>
+    </g>
+    <g class="trains"></g>
+    </svg>
+  </template>
+  <script type="module" src="app.js?v=20261113-r9"></script>
 </body>
 </html>
