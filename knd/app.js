@@ -221,7 +221,10 @@ function go(index, requestedStep, replay = false) {
     if (section.video && (changed || replay || video.dataset.section !== section.id)) {
       video.dataset.section = section.id;
       video.poster = section.first;
-      video.src = clips.get(section.video)?.url || section.video;
+      const clip = clips.get(section.video);
+      // A clip still on its way to memory is dropped: the player streams it alone instead of sharing the line.
+      if (clip && !clip.url) { clip.controller?.abort(); clips.delete(section.video); }
+      video.src = clip?.url || section.video;
       video.load();
     }
     if (section.video && step === 0) video.currentTime = 0;
@@ -251,9 +254,9 @@ function warm() {
   if (!upcoming || clips.has(upcoming)) return;
   // While the current clip still streams from the network, the next one waits: two downloads would stall both.
   if (now && !clips.get(now)?.url && !video.ended) { video.addEventListener('ended', warm, {once: true}); return; }
-  const entry = {};
+  const entry = {controller: typeof AbortController === 'function' ? new AbortController() : null};
   clips.set(upcoming, entry);
-  fetch(upcoming).then(response => response.ok ? response.blob() : null)
+  fetch(upcoming, {signal: entry.controller?.signal}).then(response => response.ok ? response.blob() : null)
     .then(blob => { if (blob && clips.get(upcoming) === entry) entry.url = URL.createObjectURL(blob); })
     .catch(() => {});
 }
@@ -424,7 +427,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261115-r10');
+  const response = await fetch('content.json?v=20261115-r11');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
