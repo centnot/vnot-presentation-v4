@@ -10,9 +10,9 @@ import shutil
 import subprocess
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from scipy.ndimage import gaussian_filter1d
-from project_paths import ROOT, INTERFACES, previous_media, raw_media
+from project_paths import ROOT, INTERFACES, previous_media, raw_media, font_path
 
 OUT = ROOT / 'build/video-review/repaired'
 OUT.mkdir(parents=True, exist_ok=True)
@@ -80,8 +80,10 @@ def composite(frame, insert, quad, occlude=False, ink=False, notch=False):
         result = frame*(1-alpha[...,None])+warped*alpha[...,None]
     return np.uint8(np.clip(result,0,255))
 
-def write(path, frames, size=(1890,1080)):
-    pipe = subprocess.Popen(['ffmpeg','-v','error','-y','-f','rawvideo','-pix_fmt','bgr24','-s',f'{size[0]}x{size[1]}','-r','24','-i','-','-an','-c:v','libx264','-preset','fast','-crf','17','-pix_fmt','yuv420p','-movflags','+faststart',str(path)],stdin=subprocess.PIPE)
+def write(path, frames, size=(1890,1080), maxrate=None):
+    # maxrate caps noisy upscales (fine SeedVR2 grain) so the clip streams from GitHub Pages without stalls.
+    rate = ['-preset','slow','-crf','19','-maxrate',maxrate,'-bufsize',str(2*int(maxrate[:-1]))+'M'] if maxrate else ['-preset','fast','-crf','17']
+    pipe = subprocess.Popen(['ffmpeg','-v','error','-y','-f','rawvideo','-pix_fmt','bgr24','-s',f'{size[0]}x{size[1]}','-r','24','-i','-','-an','-c:v','libx264',*rate,'-pix_fmt','yuv420p','-movflags','+faststart',str(path)],stdin=subprocess.PIPE)
     count = 0
     for f in frames:
         pipe.stdin.write(f.tobytes()); count += 1
@@ -202,6 +204,141 @@ def monitoring():
         cap.release()
     write(OUT/'monitoring.mp4',frames())
 
+def frames_of(path):
+    cap=cv2.VideoCapture(str(path))
+    while True:
+        ok,f=cap.read()
+        if not ok:break
+        yield f
+    cap.release()
+
+def worker_box(frame):
+    """Full-body box of the roof worker: snow separates the saturated jacket and the dark trousers."""
+    hsv=cv2.cvtColor(frame,cv2.COLOR_BGR2HSV)
+    h,s,v=hsv[...,0],hsv[...,1],hsv[...,2]
+    # Orange jacket and yellow helmet anchor the person; the city lights are small and on the left.
+    warm=((h>=5)&(h<=35)&(s>=120)&(v>=120)).astype(np.uint8)
+    warm=cv2.morphologyEx(warm,cv2.MORPH_OPEN,np.ones((3,3),np.uint8))
+    n,_,stats,_=cv2.connectedComponentsWithStats(warm)
+    best=max(range(1,n),key=lambda k:stats[k,cv2.CC_STAT_AREA]*(stats[k,cv2.CC_STAT_LEFT]>700))
+    x,y,w,hh=stats[best,:4]
+    cx=x+w/2
+    person=((s>=70)|(v<110)).astype(np.uint8)
+    rows=person[:,int(cx-.6*w):int(cx+.6*w)].sum(1)
+    bottom,gap=y+hh,0
+    for r in range(y+hh,min(frame.shape[0],y+6*hh)):
+        if rows[r]>=3:bottom,gap=r,0
+        else:
+            gap+=1
+            # Reflective stripes and snow on the boots are thinner than the snow below the feet.
+            if gap>30:break
+    near=warm[max(0,y-int(1.2*hh)):y+hh,max(0,x-int(.3*w)):x+w+int(.3*w)]
+    ys=np.where(near.any(1))[0]
+    top=max(0,y-int(1.2*hh))+int(ys.min()) if len(ys) else y
+    bottom+=int(.06*(bottom-top))  # snow-covered boots below the dark trousers
+    x0=int(cx-1.3*w)
+    cols=set(np.where(person[top:bottom+1,x0:int(cx+1.3*w)].mean(0)>=.22)[0].tolist())
+    # Contiguous body columns around the centre: the thin shovel handle stays outside the box.
+    left=right=int(cx)-x0
+    while left-1 in cols or left-2 in cols:left-=1
+    while right+1 in cols or right+2 in cols:right+=1
+    pad=.05*(right-left)
+    return [x0+left-pad,top-pad,x0+right+pad,bottom+pad]
+
+def detection(frame, box, label, alpha):
+    """AI-camera style box with corner marks and a label; alpha 0..1 animates its appearance."""
+    if alpha<=0:return frame
+    x0,y0,x1,y1=box
+    grow=1+.12*(1-alpha)
+    cx,cy=(x0+x1)/2,(y0+y1)/2
+    x0,x1=cx+(x0-cx)*grow,cx+(x1-cx)*grow
+    y0,y1=cy+(y0-cy)*grow,cy+(y1-cy)*grow
+    red=(229,57,53)
+    layer=Image.new('RGBA',(frame.shape[1],frame.shape[0]),(0,0,0,0))
+    draw=ImageDraw.Draw(layer)
+    draw.rectangle([x0,y0,x1,y1],fill=red+(22,),outline=red+(255,),width=4)
+    # Corner marks as solid L-shapes that overlap the outline exactly.
+    c,t=.22*min(x1-x0,y1-y0),9
+    for bx,by,sx,sy in [(x0,y0,1,1),(x1,y0,-1,1),(x0,y1,1,-1),(x1,y1,-1,-1)]:
+        hx=sorted([bx,bx+sx*c]);hy=sorted([by,by+sy*t]);vx=sorted([bx,bx+sx*t]);vy=sorted([by,by+sy*c])
+        draw.rectangle([hx[0],hy[0],hx[1],hy[1]],fill=red+(255,))
+        draw.rectangle([vx[0],vy[0],vx[1],vy[1]],fill=red+(255,))
+    font=ImageFont.truetype(str(font_path(bold=True)),38)
+    left,top,right,bottom=draw.textbbox((0,0),label,font=font)
+    tw,th=right-left,bottom-top
+    lx=min(x0-2,frame.shape[1]-tw-40)
+    ly=y0-th-26 if y0-th-26>10 else y0+8
+    draw.rectangle([lx,ly,lx+tw+28,ly+th+20],fill=red+(255,))
+    draw.text((lx+14-left,ly+10-top),label,font=font,fill=(255,255,255,255))
+    rgba=np.asarray(layer).astype(np.float32)
+    a=rgba[...,3:]/255*alpha
+    result=frame.astype(np.float32)*(1-a)+rgba[...,2::-1]*a
+    return np.uint8(np.clip(result,0,255))
+
+def ai_cameras():
+    # 13.11.2026: the owl spots something on the monitoring screen (KND_cameras s4202, SeedVR2 1080p) and points;
+    # hard cut to the roof camera, where an AI detection box marks the worker at height without a harness.
+    owl=HD3/'KND_cameras_1344x768_s4202_00001__1080p_00001_.mp4'
+    roof=previous_media()/'V9_s910_v4.mp4'
+    cut,first,last,delay=72,50,152,8
+    raw=[worker_box(f) for i,f in enumerate(frames_of(roof)) if first<=i<=last]
+    boxes=gaussian_filter1d(np.float32(raw),2.5,axis=0,mode='nearest')
+    (OUT/'ai-cameras-boxes.json').write_text(json.dumps(boxes.round(1).tolist()),encoding='utf-8')
+    def frames():
+        for i,f in enumerate(frames_of(owl)):
+            if i>=cut:break
+            yield f
+        for i,f in enumerate(frames_of(roof)):
+            if first<=i<=last:
+                k=i-first
+                yield detection(f,boxes[k],'Работа на высоте без страховки',min(1,max(0,(k-delay+1)/4)))
+    write(OUT/'ai-cameras.mp4',frames())
+
+def gold(img):
+    hsv=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
+    return ((hsv[...,0]>=10)&(hsv[...,0]<=35)&(hsv[...,1]>=80)&(hsv[...,2]>=120)).astype(np.uint8)
+
+def name_tape(source, ref, window, text='РОСТРУД'):
+    """Replace garbled gold lettering on the owl's name tape, tracked from a reference frame."""
+    plate=read(source,ref)
+    x0,y0,x1,y1=window
+    n,_,st,_=cv2.connectedComponentsWithStats(gold(plate[y0:y1,x0:x1]))
+    comps=[k for k in range(1,n) if st[k,cv2.CC_STAT_AREA]>=2 and st[k,cv2.CC_STAT_HEIGHT]<=18]
+    bx0=min(st[k,0] for k in comps)+x0;by0=min(st[k,1] for k in comps)+y0
+    bx1=max(st[k,0]+st[k,2] for k in comps)+x0;by1=max(st[k,1]+st[k,3] for k in comps)+y0
+    letters=plate[by0:by1,bx0:bx1]
+    colour=np.percentile(letters[gold(letters)>0],80,axis=0)
+    pad,reach=30,40
+    template=cv2.cvtColor(plate[by0-pad:by1+pad,bx0-pad:bx1+pad],cv2.COLOR_BGR2GRAY)
+    offsets=[]
+    for f in frames_of(source):
+        area=cv2.cvtColor(f[by0-pad-reach:by1+pad+reach,bx0-pad-reach:bx1+pad+reach],cv2.COLOR_BGR2GRAY)
+        _,score,_,loc=cv2.minMaxLoc(cv2.matchTemplate(area,template,cv2.TM_CCOEFF_NORMED))
+        if score<.6:raise RuntimeError(f'Name tape tracking lost: {score:.2f}')
+        offsets.append([loc[0]-reach,loc[1]-reach])
+    offsets=np.rint(gaussian_filter1d(np.float32(offsets),1.5,axis=0,mode='nearest')).astype(int)
+    # Lettering rendered large and reduced to the tape size, slightly softened like embroidery.
+    font=ImageFont.truetype(str(font_path(bold=True)),200)
+    l,t,r,b=ImageDraw.Draw(Image.new('L',(1,1))).textbbox((0,0),text,font=font)
+    big=Image.new('L',(r-l,b-t));ImageDraw.Draw(big).text((-l,-t),text,font=font,fill=255)
+    w,h=bx1-bx0,by1-by0
+    small=big.resize((w*4,h*4),Image.LANCZOS).resize((w,h),Image.LANCZOS).filter(ImageFilter.GaussianBlur(.35))
+    alpha=np.asarray(small).astype(np.float32)[...,None]/255
+    for f,(dx,dy) in zip(frames_of(source),offsets):
+        X0,Y0,X1,Y1=bx0+dx-3,by0+dy-3,bx1+dx+3,by1+dy+3
+        patch=f[Y0:Y1,X0:X1]
+        mask=cv2.dilate(gold(patch),np.ones((3,3),np.uint8),iterations=2)
+        f[Y0:Y1,X0:X1]=cv2.inpaint(patch,mask*255,3,cv2.INPAINT_TELEA)
+        region=f[by0+dy:by1+dy,bx0+dx:bx1+dx].astype(np.float32)
+        f[by0+dy:by1+dy,bx0+dx:bx1+dx]=np.uint8(region*(1-alpha)+colour*alpha)
+        yield f
+
+def drones():
+    # 13.11.2026 take: exactly one owl; the drone lifts off and hovers in front of the concrete frame
+    # (KND_drones2 s4312, SeedVR2 1080p). SeedVR2 garbled the name tape, so the lettering is replaced.
+    source=HD3/'KND_drones2_1344x768_s4312_00001__1080p_00001_.mp4'
+    write(OUT/'drones.mp4',name_tape(source,40,(478,516,558,550)),maxrate='8M')
+
 def main():
     closeup('assistant',HD2/'V10_1344x768_s1001_00001__1080p_00001_.mp4',98,108,
             INTERFACES/'v3_spread_ai.png',
@@ -213,6 +350,8 @@ def main():
     remote()
     hold_clean_book()
     monitoring()
+    ai_cameras()
+    drones()
     from repair_erknm import main as repair_erknm
     repair_erknm()
 

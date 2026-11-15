@@ -22,7 +22,8 @@ let previousTick = performance.now();
 let controlTimer;
 let lastNav = -1000;
 let playbackVersion = 0;
-const posterCache = [];
+const posterCache = new Map();
+const clips = new Map();
 
 function fit() {
   // Phones report a zoomed-out innerWidth; the client box is the visible viewport.
@@ -220,7 +221,7 @@ function go(index, requestedStep, replay = false) {
     if (section.video && (changed || replay || video.dataset.section !== section.id)) {
       video.dataset.section = section.id;
       video.poster = section.first;
-      video.src = section.video;
+      video.src = clips.get(section.video)?.url || section.video;
       video.load();
     }
     if (section.video && step === 0) video.currentTime = 0;
@@ -233,6 +234,28 @@ function go(index, requestedStep, replay = false) {
   history.replaceState(null, '', location.pathname + location.search + hash);
   syncPlayback();
   showControls();
+  warm();
+}
+
+function warm() {
+  // GitHub Pages answers each request in 0.5–1 s, and a <video> range request does not reuse fetch() data:
+  // the next clip is downloaded into memory while the current section is on screen, so it starts at once.
+  preloadPosters([deck.sections[chapter + 1]]);
+  if (typeof fetch !== 'function' || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') return;
+  const now = current()?.video;
+  const upcoming = deck.sections.slice(chapter + 1).find(section => section.video)?.video;
+  for (const [src, entry] of clips) if (src !== now && src !== upcoming) {
+    if (entry.url && video.src !== entry.url) URL.revokeObjectURL(entry.url);
+    clips.delete(src);
+  }
+  if (!upcoming || clips.has(upcoming)) return;
+  // While the current clip still streams from the network, the next one waits: two downloads would stall both.
+  if (now && !clips.get(now)?.url && !video.ended) { video.addEventListener('ended', warm, {once: true}); return; }
+  const entry = {};
+  clips.set(upcoming, entry);
+  fetch(upcoming).then(response => response.ok ? response.blob() : null)
+    .then(blob => { if (blob && clips.get(upcoming) === entry) entry.url = URL.createObjectURL(blob); })
+    .catch(() => {});
 }
 
 function next() {
@@ -303,15 +326,15 @@ function drawSpeaker() {
   }
 }
 
-function preloadPosters() {
+function preloadPosters(sections = deck.sections) {
   // A decoded poster paints at once; otherwise <video> shows its previous poster for a frame after load().
   if (typeof Image !== 'function') return;
-  for (const section of deck.sections) for (const src of [section.first, section.poster]) {
-    if (!src) continue;
+  for (const section of sections) for (const src of [section?.first, section?.poster]) {
+    if (!src || posterCache.has(src)) continue;
     const image = new Image();
     image.src = src;
     image.decode?.().catch(() => {});
-    posterCache.push(image);
+    posterCache.set(src, image);
   }
 }
 
@@ -401,7 +424,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261113-r9');
+  const response = await fetch('content.json?v=20261115-r10');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
@@ -412,8 +435,9 @@ try {
     go(Number(button.dataset.chapter), Number(button.dataset.step) || 0, true);
   }));
   drawSpeaker();
-  preloadPosters();
   go(...fromHash());
+  // The rest of the posters wait until the opened screen and the first clip have the bandwidth.
+  setTimeout(preloadPosters, 5000);
   addEventListener('hashchange', () => { const [index, requested] = fromHash(); go(index, requested, true); });
   requestAnimationFrame(tick);
 } catch (error) {

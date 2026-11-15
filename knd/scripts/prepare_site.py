@@ -38,7 +38,7 @@ def prepare():
             for suffix, seek in [('first', ['-ss', '0']), ('last', ['-sseof', '-0.08'])]:
                 run(['ffmpeg', '-v', 'error', '-y', *seek, '-i', str(corrected), '-frames:v', '1', '-q:v', '2', str(SITE / f'media/{target}-{suffix}.jpg')])
             continue
-        if target in {'assistant', 'ervk', 'monitoring', 'erknm'}:
+        if target in {'assistant', 'ervk', 'monitoring', 'erknm', 'drones', 'ai-cameras'}:
             # Preserve checked public edits if temporary review renders are removed.
             if all((SITE / 'media' / (target + suffix)).exists() for suffix in ['.mp4', '-first.jpg', '-last.jpg']):
                 continue
