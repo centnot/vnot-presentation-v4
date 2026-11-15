@@ -457,7 +457,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261115-r13');
+  const response = await fetch('content.json?v=20261115-r14');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
