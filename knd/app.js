@@ -160,7 +160,7 @@ function drawLanding() {
       <div class="browser-view" role="img" aria-label="Страница «${escapeHTML(landing.title)}»" style="background-image:url('${escapeHTML(landing.screenshot)}')"></div></div>
     <div class="landing-side"><p class="graphic-kicker">${escapeHTML(landing.kicker)}</p><h2>${html(landing.title)}</h2><p>${html(landing.lead)}</p>
       <div class="guide-grid">${deck.instructions.map(item => `<figure class="guide-card"><img src="${escapeHTML(item.image)}" alt="Руководство «${escapeHTML(item.title)}»"><figcaption><b>${html(item.title)}</b>${html(item.description)}</figcaption></figure>`).join('')}</div>
-      <p class="landing-status">${html(landing.status)}</p></div>
+      ${landing.status ? `<p class="landing-status">${html(landing.status)}</p>` : ''}</div>
     <div class="creation-process"><strong>${html(landing.stepsTitle || 'Как создаём')}</strong>${landing.steps.map(text => `<span>${html(text)}</span>`).join('')}</div>`;
 }
 
@@ -457,7 +457,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261115-r12');
+  const response = await fetch('content.json?v=20261115-r13');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
