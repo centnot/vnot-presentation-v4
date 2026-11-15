@@ -50,6 +50,7 @@ function syncPlayback() {
 function drawSummary(section) {
   $('#summary').classList.toggle('compact', Boolean(section.extra) || ['risk-model', 'image', 'route'].includes(section.graphic) || section.metrics.length > 2);
   $('#summary').classList.toggle('route', section.graphic === 'route');
+  $('#summary').classList.toggle('timed', Boolean(section.bulletTimes));
   $('#summary').innerHTML = `<p class="eyebrow">${escapeHTML(section.graphic ? 'Цифровой инструмент' : 'Практика Роструда')}</p>
     <h2>${html(section.tagline)}</h2>
     <ul>${section.bullets.map(text => `<li>${html(text)}</li>`).join('')}</ul>
@@ -67,7 +68,8 @@ function drawGraphic(section) {
   if (!section.graphic) { graphic.innerHTML = ''; return; }
   graphic.classList.toggle('light', ['image', 'route'].includes(section.graphic));
   if (section.graphic === 'route') {
-    graphic.innerHTML = `<p class="graphic-kicker">${html(section.kicker)}</p><p class="route-q"></p><div class="route-map" role="img" aria-label="${escapeHTML(section.alt)}">${$('#route-map').innerHTML}</div>`;
+    graphic.innerHTML = `<div class="route-tabs" aria-label="${escapeHTML(section.kicker)}">${section.routes.map((route, index) => `<button data-route="${index}"><b>${index + 1}</b>${html(route.label)}</button>`).join('')}</div><p class="route-q"></p><div class="route-map" role="img" aria-label="${escapeHTML(section.alt)}">${$('#route-map').innerHTML}</div>`;
+    graphic.querySelectorAll('[data-route]').forEach(button => button.addEventListener('click', () => startRoutes(section, Number(button.dataset.route))));
     startRoutes(section);
   } else if (section.graphic === 'image') {
     graphic.innerHTML = `<p class="graphic-kicker">${html(section.kicker)}</p><img class="graphic-image" src="${escapeHTML(section.image)}" alt="${escapeHTML(section.alt)}">`;
@@ -100,24 +102,26 @@ function drawGraphic(section) {
 const LINE_Y = {1: 70, 2: 165, 3: 265, 4: 360};
 const reduceMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 let routeTimer;
-function startRoutes(section) {
+function startRoutes(section, from = 0) {
   clearTimeout(routeTimer);
-  let index = 0;
-  drawRoute(section.routes[index++]);
+  let index = from;
+  drawRoute(section, index++);
   const next = () => {
     if (current()?.extra !== section || step !== 2) return;
-    if (!paused && !black && !hasDialog() && !document.hidden) drawRoute(section.routes[index++ % section.routes.length]);
+    if (!paused && !black && !hasDialog() && !document.hidden) drawRoute(section, index++ % section.routes.length);
     routeTimer = setTimeout(next, (section.routeSeconds || 8) * 1000);
   };
   routeTimer = setTimeout(next, (section.routeSeconds || 8) * 1000);
 }
-function drawRoute(route) {
+function drawRoute(section, index) {
+  const route = section.routes[index];
   const svg = $('#graphic').querySelector('.route-svg');
   if (!svg) return;
+  $('#graphic').querySelectorAll('[data-route]').forEach(button => button.classList.toggle('active', Number(button.dataset.route) === index));
   $('#graphic').querySelector('.route-q').textContent = glue(`«${route.q}»`);
   svg.classList.add('focus');
   svg.querySelectorAll('.grp').forEach(group => group.classList.toggle('off', group.dataset.g !== 'trunk' && !route.lines.includes(Number(group.dataset.g))));
-  $('#summary .eyebrow').textContent = `Маршрут · ${route.lines.length > 1 ? 'линии' : 'линия'} ${route.lines.join(' и ')}`;
+  $('#summary .eyebrow').textContent = `Пример ${index + 1} из ${section.routes.length} · ${route.lines.length > 1 ? 'линии' : 'линия'} ${route.lines.join(' и ')}`;
   $('#summary ul').innerHTML = route.steps.map(text => `<li>${html(text)}</li>`).join('');
   const host = svg.querySelector('.trains');
   host.innerHTML = '';
@@ -228,7 +232,7 @@ function go(index, requestedStep, replay = false) {
       video.load();
     }
     if (section.video && step === 0) video.currentTime = 0;
-    drawSummary(screen); drawGraphic(screen);
+    drawSummary(screen); drawGraphic(screen); markBullet();
     $('#media-caption').hidden = section.id !== 'ervk' || step === 2;
     $('#media-caption').textContent = section.id === 'ervk' ? 'Расчёт в АСУ КНД  ·  Подписание  ·  Передача в ЕРВК' : '';
   }
@@ -294,7 +298,20 @@ function setBlack(value) {
 }
 function toggleFullscreen() {
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  else document.documentElement.requestFullscreen().catch(() => {});
+  else enterFullscreen();
+}
+function enterFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+}
+// The browser's own F11 mode fills the screen without the Fullscreen API: Esc cannot leave it, only F11.
+const browserFullscreen = () => !document.fullscreenElement && typeof screen === 'object'
+  && Math.abs(innerWidth - screen.width) < 2 && Math.abs(innerHeight - screen.height) < 2;
+let hintTimer;
+function hint(text) {
+  $('#key-hint').textContent = text;
+  $('#key-hint').hidden = false;
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => { $('#key-hint').hidden = true; }, 3500);
 }
 function showControls() {
   document.body.classList.remove('controls-hidden');
@@ -386,6 +403,10 @@ addEventListener('keydown', event => {
   if (!deck || event.ctrlKey || event.metaKey || event.altKey || event.repeat) return;
   const key = event.key;
   if (black) { if (['Escape', ' ', 'Enter', 'ArrowRight', 'ArrowLeft', 'PageDown', 'PageUp', 'b', 'B', '.'].includes(key)) { event.preventDefault(); setBlack(false); } return; }
+  // F11 and F5 open the show full screen like the button, so Esc closes it; F5 again does not leave it.
+  if (key === 'F11' && !browserFullscreen()) { event.preventDefault(); toggleFullscreen(); return; }
+  if (key === 'F5') { event.preventDefault(); enterFullscreen(); return; }
+  if (key === 'Escape' && !hasDialog() && browserFullscreen()) { hint('Выход из полноэкранного режима — F11'); return; }
   if (hasDialog()) return;
   const nextKeys = ['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'];
   const previousKeys = ['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'];
@@ -399,7 +420,7 @@ addEventListener('keydown', event => {
   else if (event.code === 'KeyN') openNotes();
   else if (event.code === 'KeyR' && current()) go(chapter, 0, true);
   else if (event.code === 'KeyP' && current()) togglePause();
-  else if (event.code === 'KeyF' || key === 'F5') { event.preventDefault(); toggleFullscreen(); }
+  else if (event.code === 'KeyF') { event.preventDefault(); toggleFullscreen(); }
   else if (event.code === 'KeyB' || event.code === 'Period') setBlack(true);
   else if (/^Digit[0-9]$/.test(event.code)) { const index = event.code === 'Digit0' ? 9 : Number(event.code.slice(-1)) - 1; if (index < deck.sections.length) go(index, 0, true); }
 });
@@ -411,10 +432,19 @@ document.addEventListener('fullscreenchange', showControls);
 document.addEventListener('click', event => { if (event.detail) event.target.closest?.('button')?.blur(); }, true);
 document.addEventListener('visibilitychange', () => { previousTick = performance.now(); syncPlayback(); });
 
+function markBullet() {
+  // МП «Инспектор»: the scenario that is on screen is highlighted in the list on the right.
+  const times = current()?.bulletTimes;
+  if (!times || step !== 0) return;
+  const active = times.filter(start => video.currentTime >= start - 0.05).length - 1;
+  $('#summary').querySelectorAll('li').forEach((item, index) => item.classList.toggle('active', index === active));
+}
+
 function tick(now) {
   const delta = Math.max(0, now - previousTick);
   previousTick = now;
   const section = current();
+  markBullet();
   if (section?.autoLandingSeconds && step < 2 && !paused && !black && !hasDialog() && !document.hidden) {
     // Count only active time, including the held final frame after the short clip.
     if (step === 1 || (!video.paused && video.readyState >= 2)) elapsed += delta;
@@ -427,7 +457,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261115-r11');
+  const response = await fetch('content.json?v=20261115-r12');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();

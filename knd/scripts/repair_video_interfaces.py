@@ -4,6 +4,7 @@ Moving remote-monitor insert: anchored planar tracking from the first frame.
 Unstable generated close-ups: clean photographic plates, with the original
 animation retained before a hard camera cut. Text is never cross-faded over UI.
 """
+from itertools import islice
 from pathlib import Path
 import json
 import shutil
@@ -298,8 +299,10 @@ def gold(img):
     hsv=cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     return ((hsv[...,0]>=10)&(hsv[...,0]<=35)&(hsv[...,1]>=80)&(hsv[...,2]>=120)).astype(np.uint8)
 
-def name_tape(source, ref, window, text='РОСТРУД'):
-    """Replace garbled gold lettering on the owl's name tape, tracked from a reference frame."""
+def name_tape(source, ref, window, until=None, follow=None, text='РОСТРУД'):
+    """Replace garbled gold lettering on the owl's name tape, tracked frame to frame from a reference frame.
+    From `follow` the template is taken from the previous frame (the owl leans and comes closer);
+    frames after `until` pass unchanged: there the owl moves fast and the tape is a blurred smear anyway."""
     plate=read(source,ref)
     x0,y0,x1,y1=window
     n,_,st,_=cv2.connectedComponentsWithStats(gold(plate[y0:y1,x0:x1]))
@@ -308,15 +311,20 @@ def name_tape(source, ref, window, text='РОСТРУД'):
     bx1=max(st[k,0]+st[k,2] for k in comps)+x0;by1=max(st[k,1]+st[k,3] for k in comps)+y0
     letters=plate[by0:by1,bx0:bx1]
     colour=np.percentile(letters[gold(letters)>0],80,axis=0)
-    pad,reach=30,40
+    pad,reach=30,30
     template=cv2.cvtColor(plate[by0-pad:by1+pad,bx0-pad:bx1+pad],cv2.COLOR_BGR2GRAY)
-    offsets=[]
-    for f in frames_of(source):
-        area=cv2.cvtColor(f[by0-pad-reach:by1+pad+reach,bx0-pad-reach:bx1+pad+reach],cv2.COLOR_BGR2GRAY)
+    offsets,dx,dy=[],0,0
+    for i,f in enumerate(frames_of(source)):
+        if until is not None and i>until:break
+        sx,sy=max(0,bx0-pad-reach+dx),max(0,by0-pad-reach+dy)
+        area=cv2.cvtColor(f[sy:by1+pad+reach+dy,sx:bx1+pad+reach+dx],cv2.COLOR_BGR2GRAY)
         _,score,_,loc=cv2.minMaxLoc(cv2.matchTemplate(area,template,cv2.TM_CCOEFF_NORMED))
-        if score<.6:raise RuntimeError(f'Name tape tracking lost: {score:.2f}')
-        offsets.append([loc[0]-reach,loc[1]-reach])
-    offsets=np.rint(gaussian_filter1d(np.float32(offsets),1.5,axis=0,mode='nearest')).astype(int)
+        if score<.6:raise RuntimeError(f'Name tape tracking lost at frame {i}: {score:.2f}')
+        dx,dy=loc[0]+sx-(bx0-pad),loc[1]+sy-(by0-pad)
+        offsets.append([dx,dy])
+        if follow is not None and i>=follow:
+            template=cv2.cvtColor(f[by0-pad+dy:by1+pad+dy,bx0-pad+dx:bx1+pad+dx],cv2.COLOR_BGR2GRAY)
+    # No temporal smoothing: matches are exact to a pixel, and smoothing lags when the owl crouches.
     # Lettering rendered large and reduced to the tape size, slightly softened like embroidery.
     font=ImageFont.truetype(str(font_path(bold=True)),200)
     l,t,r,b=ImageDraw.Draw(Image.new('L',(1,1))).textbbox((0,0),text,font=font)
@@ -324,20 +332,36 @@ def name_tape(source, ref, window, text='РОСТРУД'):
     w,h=bx1-bx0,by1-by0
     small=big.resize((w*4,h*4),Image.LANCZOS).resize((w,h),Image.LANCZOS).filter(ImageFilter.GaussianBlur(.35))
     alpha=np.asarray(small).astype(np.float32)[...,None]/255
-    for f,(dx,dy) in zip(frames_of(source),offsets):
-        X0,Y0,X1,Y1=bx0+dx-3,by0+dy-3,bx1+dx+3,by1+dy+3
-        patch=f[Y0:Y1,X0:X1]
-        mask=cv2.dilate(gold(patch),np.ones((3,3),np.uint8),iterations=2)
-        f[Y0:Y1,X0:X1]=cv2.inpaint(patch,mask*255,3,cv2.INPAINT_TELEA)
-        region=f[by0+dy:by1+dy,bx0+dx:bx1+dx].astype(np.float32)
-        f[by0+dy:by1+dy,bx0+dx:bx1+dx]=np.uint8(region*(1-alpha)+colour*alpha)
+    for i,f in enumerate(frames_of(source)):
+        if i<len(offsets):
+            dx,dy=offsets[i]
+            vx,vy=np.subtract(offsets[i],offsets[i-1]) if i else (0,0)
+            # Fast moves blur the frame; the new lettering gets the same motion blur, and a taller patch.
+            m=max(3,int(abs(vy)*.6)+3)
+            X0,Y0,X1,Y1=bx0+dx-3,by0+dy-m,bx1+dx+3,by1+dy+m
+            patch=f[Y0:Y1,X0:X1]
+            mask=cv2.dilate(gold(patch),np.ones((3,3),np.uint8),iterations=2)
+            f[Y0:Y1,X0:X1]=cv2.inpaint(patch,mask*255,3,cv2.INPAINT_TELEA)
+            a=alpha
+            if abs(vx)+abs(vy)>6:
+                k=int(np.hypot(vx,vy)*.6)|1
+                kernel=np.zeros((k,k),np.float32)
+                cv2.line(kernel,(k//2-int(vx*.3),k//2-int(vy*.3)),(k//2+int(vx*.3),k//2+int(vy*.3)),1,1)
+                a=cv2.copyMakeBorder(alpha[...,0],k,k,k,k,cv2.BORDER_CONSTANT)
+                a=cv2.filter2D(a,-1,kernel/kernel.sum())[...,None]
+                ya,xa=by0+dy-k,bx0+dx-k
+            else:
+                ya,xa=by0+dy,bx0+dx
+            region=f[ya:ya+a.shape[0],xa:xa+a.shape[1]].astype(np.float32)
+            f[ya:ya+a.shape[0],xa:xa+a.shape[1]]=np.uint8(region*(1-a)+colour*a)
         yield f
 
 def drones():
-    # 13.11.2026 take: exactly one owl; the drone lifts off and hovers in front of the concrete frame
-    # (KND_drones2 s4312, SeedVR2 1080p). SeedVR2 garbled the name tape, so the lettering is replaced.
-    source=HD3/'KND_drones2_1344x768_s4312_00001__1080p_00001_.mp4'
-    write(OUT/'drones.mp4',name_tape(source,40,(478,516,558,550)),maxrate='8M')
+    # The owl takes off with the drone and flies over the site (V8_s802_v3; the flight stays, decision of 15.11).
+    # The clip ends at frame 102 while the owl glides next to the drone: later frames smear it into the roof,
+    # and the last frame stays on screen. The garbled name tape is replaced until the jump blurs it (frames 0-40).
+    source=previous_media()/'V8_s802_v3.mp4'
+    write(OUT/'drones.mp4',islice(name_tape(source,5,(560,405,660,450),until=40,follow=34),103),maxrate='8M')
 
 def main():
     closeup('assistant',HD2/'V10_1344x768_s1001_00001__1080p_00001_.mp4',98,108,

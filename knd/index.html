@@ -7,9 +7,9 @@
   <meta name="description" content="Цифровые инструменты контроля и надзора. Медиа-презентация Роструда для Форума контрольных органов — 2026.">
   <title>Роструд · Форум контрольных органов — 2026</title>
   <link rel="icon" href="assets/forum-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20261115-r11">
+  <link rel="stylesheet" href="styles.css?v=20261115-r12">
   <!-- Start these with the page: otherwise they wait for app.js and styles.css, one Pages round trip each. -->
-  <link rel="preload" href="content.json?v=20261115-r11" as="fetch" crossorigin>
+  <link rel="preload" href="content.json?v=20261115-r12" as="fetch" crossorigin>
   <link rel="preload" href="assets/cover-bg.png" as="image">
 </head>
 <body>
@@ -61,14 +61,14 @@
     <span id="position" class="position" aria-live="polite">Начало</span>
     <button id="pause" title="Пауза · P" aria-label="Приостановить" style="visibility:hidden">Ⅱ</button>
     <button id="notes" title="Текст выступления · N">Текст</button>
-    <button id="fullscreen" title="Полный экран · F" aria-label="Полный экран">⛶</button>
+    <button id="fullscreen" title="Полный экран · F, F5, F11 · выход — Esc" aria-label="Полный экран">⛶</button>
     <button id="next" title="Дальше · →" aria-label="Следующий экран">→</button>
   </nav>
 
   <dialog id="contents-dialog" aria-labelledby="contents-title">
     <div class="dialog-head"><h2 id="contents-title">Разделы выступления</h2><button data-close aria-label="Закрыть">×</button></div>
     <ol id="contents-list"></ol>
-    <p class="keyboard-help">← → — листать · T — разделы · R — повторить · F — полный экран · B — чёрный экран</p>
+    <p class="keyboard-help">← → — листать · T — разделы · R — повторить · F, F5, F11 — полный экран · Esc — выход · B — чёрный экран</p>
   </dialog>
   <dialog id="notes-dialog" aria-labelledby="notes-title">
     <div class="dialog-head"><h2 id="notes-title">Текст выступления</h2><button data-close aria-label="Закрыть">×</button></div>
@@ -76,6 +76,7 @@
     <a id="download-notes" class="download-link" href="speech.txt" download>Скачать весь текст · TXT</a>
   </dialog>
   <div id="black" hidden aria-label="Чёрный экран"></div>
+  <div id="key-hint" hidden role="status"></div>
   <!-- Route diagram of the AI assistant, from its technical site (24.09.2026). -->
   <template id="route-map">
     <svg class="route-svg" viewBox="0 0 1000 420" role="img" aria-label="Схема маршрута запроса: вопрос, вход, роутер, четыре линии источников, синтез, ответ, оценка">
@@ -138,6 +139,6 @@
     <g class="trains"></g>
     </svg>
   </template>
-  <script type="module" src="app.js?v=20261115-r11"></script>
+  <script type="module" src="app.js?v=20261115-r12"></script>
 </body>
 </html>
