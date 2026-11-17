@@ -340,7 +340,7 @@ function drawSpeaker() {
     $(`#${page}-speaker`).textContent = speaker.name || '';
     $(`#${page}-speaker`).hidden = !speaker.name;
     const position = speaker.position && !/Роструд/.test(speaker.position) ? `${speaker.position}, Роструд` : speaker.position;
-    $(`#${page}-position`).textContent = position || deck.organization;
+    $(`#${page}-position`).textContent = glue(position || deck.organization);
   }
 }
 
@@ -455,7 +455,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261116-r16');
+  const response = await fetch('content.json?v=20261117-r17');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
