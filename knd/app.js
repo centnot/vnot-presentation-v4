@@ -52,7 +52,7 @@ function drawSummary(section) {
   $('#summary').classList.toggle('route', section.graphic === 'route');
   $('#summary').classList.toggle('timed', Boolean(section.bulletTimes));
   $('#summary').innerHTML = `<p class="eyebrow">${escapeHTML(section.graphic ? 'Цифровой инструмент' : 'Практика Роструда')}</p>
-    <h2>${html(section.tagline)}</h2>
+    ${section.tagline ? `<h2>${html(section.tagline)}</h2>` : ''}
     <ul>${section.bullets.map(text => `<li>${html(text)}</li>`).join('')}</ul>
     ${section.metrics.length ? `<div class="metrics">${section.metrics.map(metric => `<div class="metric"><b>${escapeHTML(metric.value)}</b><span>${html(metric.label)}</span></div>`).join('')}</div>` : ''}
     ${section.asOf ? `<p class="source-date">${html(section.asOf)}</p>` : ''}
@@ -79,10 +79,8 @@ function drawGraphic(section) {
       <div class="flow-row"><b>02</b><span>Оценка результатов</span></div>
       <div class="flow-row"><b>03</b><span>Методики премирования</span></div></div>`;
   } else if (section.graphic === 'risk-model') {
-    graphic.innerHTML = `<p class="graphic-kicker">Машинное обучение · пилот 2026</p><h2>Аналитическая оценка<br>риска нарушений</h2><div class="flow">
-      <div class="flow-row"><b>01</b><span>Восемь внутренних источников АСУ КНД</span></div>
-      <div class="flow-row"><b>02</b><span>Логистическая регрессия и скоринг</span></div>
-      <div class="flow-row"><b>03</b><span>Оценка риска и влияющие признаки</span></div></div>`;
+    graphic.innerHTML = `<p class="graphic-kicker">${html(section.kicker)}</p><h2>${html(section.heading)}</h2><div class="flow">
+      ${section.flow.map((text, index) => `<div class="flow-row"><b>${String(index + 1).padStart(2, '0')}</b><span>${html(text)}</span></div>`).join('')}</div>`;
   } else if (section.stats) {
     const stats = section.stats;
     graphic.innerHTML = `<p class="graphic-kicker">Онлайнинспекция.рф · ${escapeHTML(stats.asOf)}</p>
@@ -457,7 +455,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261116-r15');
+  const response = await fetch('content.json?v=20261116-r16');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();

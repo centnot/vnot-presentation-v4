@@ -56,8 +56,8 @@
     "sha256": "9c9ac83aeda95e157e2b0b9d759af7904ee239898ceaed71eda465aedcb792fb"
   },
   "template-assets/cover-bg.png": {
-    "bytes": 130356,
-    "sha256": "8a86c5250683a3b57fa5c217ee4dc9825257995b587fe7998578ae782e961094"
+    "bytes": 179570,
+    "sha256": "c3b8554ea52f5d67fa33e57385c2ee8896d7377fd24c8dc2f763f7f12507378a"
   },
   "template-assets/csr.png": {
     "bytes": 15859,
@@ -96,16 +96,16 @@
     "sha256": "b992973901cde76d1541e216c0913258bac0c971a90f70e2167acbe18b1c494d"
   },
   "template-assets/image5.png": {
-    "bytes": 14359,
-    "sha256": "9e1b0b794fa579a5192caa7fa3db28841cd6e7afe18105768e02767d1668be71"
+    "bytes": 1477495,
+    "sha256": "c2cc816ea0675abe4260f1fbfb0ccd116588dddf337edfe4fa25145412da2785"
   },
   "template-assets/image6.png": {
     "bytes": 92637,
     "sha256": "b76ca5002289c1468736bb051b6682c34bdea141c410534195bf769723244f49"
   },
   "template-assets/khabarovsk.png": {
-    "bytes": 14359,
-    "sha256": "9e1b0b794fa579a5192caa7fa3db28841cd6e7afe18105768e02767d1668be71"
+    "bytes": 1477495,
+    "sha256": "c2cc816ea0675abe4260f1fbfb0ccd116588dddf337edfe4fa25145412da2785"
   },
   "template-assets/layout-analysis.json": {
     "bytes": 16298,
@@ -116,8 +116,8 @@
     "sha256": "10a970553fe87e885ec5ef5456102a62d067f2d7b1855902338979f37687f9ff"
   },
   "template-assets/slide-1.png": {
-    "bytes": 130356,
-    "sha256": "8a86c5250683a3b57fa5c217ee4dc9825257995b587fe7998578ae782e961094"
+    "bytes": 179570,
+    "sha256": "c3b8554ea52f5d67fa33e57385c2ee8896d7377fd24c8dc2f763f7f12507378a"
   },
   "template-assets/slide-2.png": {
     "bytes": 39818,
