@@ -7,9 +7,9 @@
   <meta name="description" content="Цифровые инструменты контроля и надзора. Медиа-презентация Роструда для Форума контрольных органов — 2026.">
   <title>Роструд · Форум контрольных органов — 2026</title>
   <link rel="icon" href="assets/forum-logo.png">
-  <link rel="stylesheet" href="styles.css?v=20261118-r21">
+  <link rel="stylesheet" href="styles.css?v=20261118-r22">
   <!-- Start these with the page: otherwise they wait for app.js and styles.css, one Pages round trip each. -->
-  <link rel="preload" href="content.json?v=20261118-r21" as="fetch" crossorigin>
+  <link rel="preload" href="content.json?v=20261118-r22" as="fetch" crossorigin>
   <link rel="preload" href="assets/cover-bg.png?v=20261117" as="image">
 </head>
 <body>
@@ -73,7 +73,7 @@
   <dialog id="notes-dialog" aria-labelledby="notes-title">
     <div class="dialog-head"><h2 id="notes-title">Текст выступления</h2><button data-close aria-label="Закрыть">×</button></div>
     <div id="speaker-content"></div>
-    <a id="download-notes" class="download-link" href="speech.txt" download>Скачать весь текст · TXT</a>
+    <p class="download-links">Скачать весь текст: <a id="download-notes" class="download-link" href="speech.pdf" download="Текст выступления.pdf">PDF</a> · <a class="download-link" href="speech.docx" download="Текст выступления.docx">DOCX</a></p>
   </dialog>
   <div id="black" hidden aria-label="Чёрный экран"></div>
   <div id="key-hint" hidden role="status"></div>
@@ -139,6 +139,6 @@
     <g class="trains"></g>
     </svg>
   </template>
-  <script type="module" src="app.js?v=20261118-r21"></script>
+  <script type="module" src="app.js?v=20261118-r22"></script>
 </body>
 </html>
