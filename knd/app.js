@@ -47,6 +47,8 @@ function syncPlayback() {
   else video.pause();
 }
 
+// QR-код на публичную страницу; подпись в content.json — строки через перевод строки.
+const qrLink = qr => `<a class="qr-link" href="${escapeHTML(qr.url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHTML(qr.img)}" alt="QR-код: ${escapeHTML(qr.label.replace(/\n/g, ' '))}"><span>${qr.label.split('\n').map(html).join('<br>')}</span></a>`;
 function drawSummary(section) {
   $('#summary').classList.toggle('compact', Boolean(section.extra) || ['risk-model', 'image', 'route'].includes(section.graphic) || section.metrics.length > 2);
   $('#summary').classList.toggle('route', section.graphic === 'route');
@@ -56,6 +58,7 @@ function drawSummary(section) {
     <ul>${section.bullets.map(text => `<li>${html(text)}</li>`).join('')}</ul>
     ${section.metrics.length ? `<div class="metrics">${section.metrics.map(metric => `<div class="metric"><b>${escapeHTML(metric.value)}</b><span>${html(metric.label)}</span></div>`).join('')}</div>` : ''}
     ${section.asOf ? `<p class="source-date">${html(section.asOf)}</p>` : ''}
+    ${section.qr ? `<div class="qr-row">${section.qr.map(qrLink).join('')}</div>` : ''}
     ${section.autoLandingSeconds ? '<button id="show-instructions" class="secondary-action">Открыть инструкции ↗</button>' : ''}
     ${section.extra ? `<button id="show-extra" class="secondary-action">${escapeHTML(section.extra.button)}</button>` : ''}`;
   $('#show-instructions')?.addEventListener('click', () => go(chapter, 2));
@@ -156,7 +159,7 @@ function drawLanding() {
   const landing = deck.landing;
   $('#landing').innerHTML = `<div class="landing-browser"><div class="browser-bar"><i></i><i></i><i></i><span>${escapeHTML(landing.title)}</span></div>
       <div class="browser-view" role="img" aria-label="Страница «${escapeHTML(landing.title)}»" style="background-image:url('${escapeHTML(landing.screenshot)}')"></div></div>
-    <div class="landing-side"><p class="graphic-kicker">${escapeHTML(landing.kicker)}</p><h2>${html(landing.title)}</h2><p>${html(landing.lead)}</p>
+    <div class="landing-side"><p class="graphic-kicker">${escapeHTML(landing.kicker)}</p><h2>${html(landing.title)}</h2>${landing.qr ? `<div class="landing-lead"><p>${html(landing.lead)}</p>${qrLink(landing.qr)}</div>` : `<p>${html(landing.lead)}</p>`}
       <div class="guide-grid">${deck.instructions.map(item => `<figure class="guide-card"><img src="${escapeHTML(item.image)}" alt="Руководство «${escapeHTML(item.title)}»"><figcaption><b>${html(item.title)}</b>${html(item.description)}</figcaption></figure>`).join('')}</div>
       ${landing.status ? `<p class="landing-status">${html(landing.status)}</p>` : ''}</div>
     <div class="creation-process"><strong>${html(landing.stepsTitle || 'Как создаём')}</strong>${landing.steps.map(text => `<span>${html(text)}</span>`).join('')}</div>`;
@@ -455,7 +458,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261117-r18');
+  const response = await fetch('content.json?v=20261118-r19');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
