@@ -227,8 +227,8 @@ function go(index, requestedStep, replay = false) {
       video.dataset.section = section.id;
       video.poster = section.first;
       const clip = clips.get(section.video);
-      // A clip still on its way to memory is dropped: the player streams it alone instead of sharing the line.
-      if (clip && !clip.url) { clip.controller?.abort(); clips.delete(section.video); }
+      // A clip not in memory yet streams alone: downloads still on their way are dropped, not sharing the line.
+      if (!clip?.url) for (const [src, entry] of clips) if (!entry.url && !entry.failed) { entry.controller?.abort(); clips.delete(src); }
       video.src = clip?.url || section.video;
       video.load();
     }
@@ -245,25 +245,37 @@ function go(index, requestedStep, replay = false) {
   warm();
 }
 
+let warmWaitsForEnd = false;
 function warm() {
-  // GitHub Pages answers each request in 0.5–1 s, and a <video> range request does not reuse fetch() data:
-  // the next clip is downloaded into memory while the current section is on screen, so it starts at once.
+  // GitHub Pages answers each request in 0.5–1 s, and a <video> range request does not reuse fetch() data.
+  // All clips (~53 MB) are downloaded into memory one by one, the next sections first, and kept there,
+  // so any section — not only the next one — starts at once after the first minute.
   preloadPosters([deck.sections[chapter + 1]]);
   if (typeof fetch !== 'function' || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') return;
+  // One download at a time: two would stall each other.
+  for (const entry of clips.values()) if (!entry.url && !entry.failed) return;
   const now = current()?.video;
-  const upcoming = deck.sections.slice(chapter + 1).find(section => section.video)?.video;
-  for (const [src, entry] of clips) if (src !== now && src !== upcoming) {
-    if (entry.url && video.src !== entry.url) URL.revokeObjectURL(entry.url);
-    clips.delete(src);
+  const ahead = deck.sections.slice(Math.max(0, chapter + 1)).concat(deck.sections.slice(0, Math.max(0, chapter + 1)));
+  const upcoming = ahead.map(section => section.video).find(src => src && src !== now && !clips.has(src))
+    || (now && !clips.has(now) ? now : undefined);
+  if (!upcoming) return;
+  // While the current clip still streams from the network, downloads wait: they would stall its playback.
+  if (now && step === 0 && !clips.get(now)?.url && !video.ended) {
+    if (!warmWaitsForEnd) {
+      warmWaitsForEnd = true;
+      video.addEventListener('ended', () => { warmWaitsForEnd = false; warm(); }, {once: true});
+    }
+    return;
   }
-  if (!upcoming || clips.has(upcoming)) return;
-  // While the current clip still streams from the network, the next one waits: two downloads would stall both.
-  if (now && !clips.get(now)?.url && !video.ended) { video.addEventListener('ended', warm, {once: true}); return; }
   const entry = {controller: typeof AbortController === 'function' ? new AbortController() : null};
   clips.set(upcoming, entry);
   fetch(upcoming, {signal: entry.controller?.signal}).then(response => response.ok ? response.blob() : null)
-    .then(blob => { if (blob && clips.get(upcoming) === entry) entry.url = URL.createObjectURL(blob); })
-    .catch(() => {});
+    .then(blob => {
+      if (clips.get(upcoming) !== entry) return;
+      if (blob) entry.url = URL.createObjectURL(blob); else entry.failed = true;
+      warm();
+    })
+    .catch(() => { if (clips.get(upcoming) === entry) clips.delete(upcoming); });
 }
 
 function next() {
@@ -458,7 +470,7 @@ function tick(now) {
 }
 
 try {
-  const response = await fetch('content.json?v=20261118-r23');
+  const response = await fetch('content.json?v=20261118-r24');
   if (!response.ok) throw new Error('content unavailable');
   deck = await response.json();
   drawLanding();
